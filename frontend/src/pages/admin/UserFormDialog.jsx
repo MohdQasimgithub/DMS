@@ -1,0 +1,121 @@
+import { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import {
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, TextField, Grid, MenuItem, Checkbox, ListItemText,
+  Select, InputLabel, FormControl, CircularProgress, FormHelperText,
+} from '@mui/material';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { userApi } from '../../api/userApi';
+import { roleApi } from '../../api/roleApi';
+import { useNotify } from '../../hooks/useNotify';
+import { useApiError } from '../../hooks/useApiError';
+
+const schema = yup.object({
+  username: yup.string().required('Username is required').min(3).max(50),
+  email: yup.string().required('Email is required').email(),
+  password: yup.string().when('$isEdit', {
+    is: false,
+    then: (s) => s.required('Password is required').min(8),
+    otherwise: (s) => s.min(8).nullable().transform((v) => v === '' ? null : v),
+  }),
+  fullName: yup.string().max(100),
+  phoneNumber: yup.string().nullable(),
+  roleIds: yup.array().of(yup.number()),
+});
+
+export default function UserFormDialog({ open, onClose, editData }) {
+  const queryClient = useQueryClient();
+  const notify = useNotify();
+  const { handleError } = useApiError();
+  const isEdit = !!editData;
+
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
+    resolver: yupResolver(schema),
+    context: { isEdit },
+  });
+
+  const { data: roles } = useQuery({
+    queryKey: ['roles-active'],
+    queryFn: () => roleApi.getAllActive(),
+    select: (res) => res.data.data,
+    enabled: open,
+  });
+
+  useEffect(() => {
+    if (open) {
+      reset(isEdit ? {
+        ...editData,
+        password: '',
+        roleIds: editData.roles?.map((r) => roles?.find((ro) => ro.roleName === r)?.id).filter(Boolean) || [],
+      } : { roleIds: [] });
+    }
+  }, [open, editData, roles]);
+
+  const mutation = useMutation({
+    mutationFn: (data) => isEdit ? userApi.update(editData.id, data) : userApi.create(data),
+    onSuccess: () => {
+      notify.success(`User ${isEdit ? 'updated' : 'created'}`);
+      queryClient.invalidateQueries(['users']);
+      onClose();
+    },
+    onError: handleError,
+  });
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{isEdit ? 'Edit User' : 'Create User'}</DialogTitle>
+      <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
+        <DialogContent>
+          <Grid container spacing={2} mt={0.5}>
+            <Grid item xs={12} sm={6}>
+              <TextField {...register('username')} label="Username *" fullWidth
+                error={!!errors.username} helperText={errors.username?.message} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField {...register('email')} label="Email *" fullWidth
+                error={!!errors.email} helperText={errors.email?.message} />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField {...register('password')} label={isEdit ? 'New Password (leave blank to keep)' : 'Password *'}
+                type="password" fullWidth error={!!errors.password} helperText={errors.password?.message} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField {...register('fullName')} label="Full Name" fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField {...register('phoneNumber')} label="Phone" fullWidth />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth error={!!errors.roleIds}>
+                <InputLabel>Roles</InputLabel>
+                <Controller name="roleIds" control={control} render={({ field }) => (
+                  <Select {...field} multiple label="Roles"
+                    renderValue={(selected) =>
+                      (roles || []).filter((r) => selected.includes(r.id)).map((r) => r.roleName).join(', ')
+                    }>
+                    {(roles || []).map((role) => (
+                      <MenuItem key={role.id} value={role.id}>
+                        <Checkbox checked={(field.value || []).includes(role.id)} />
+                        <ListItemText primary={role.roleName} secondary={role.description} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )} />
+                {errors.roleIds && <FormHelperText>{errors.roleIds.message}</FormHelperText>}
+              </FormControl>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="contained" disabled={mutation.isPending}>
+            {mutation.isPending ? <CircularProgress size={20} /> : isEdit ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}
