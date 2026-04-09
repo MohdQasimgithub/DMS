@@ -4,6 +4,7 @@ import com.hyundai.dms.common.response.ApiResponse;
 import com.hyundai.dms.common.response.PageResponse;
 import com.hyundai.dms.domain.dealer.dto.DealerRequest;
 import com.hyundai.dms.domain.dealer.dto.DealerResponse;
+import com.hyundai.dms.domain.dealer.entity.Dealer;
 import com.hyundai.dms.domain.dealer.service.DealerService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,12 +28,14 @@ public class DealerController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<DealerResponse>>> getAll(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(required = false) Dealer.DealerStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "dealerName") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        return ResponseEntity.ok(ApiResponse.success(dealerService.getAll(PageRequest.of(page, size, sort))));
+        return ResponseEntity.ok(ApiResponse.success(dealerService.getAll(search, status, PageRequest.of(page, size, sort))));
     }
 
     @GetMapping("/{id}")
@@ -41,14 +44,14 @@ public class DealerController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<DealerResponse>> create(@Valid @RequestBody DealerRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Dealer created", dealerService.create(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<DealerResponse>> update(@PathVariable Long id,
                                                                @Valid @RequestBody DealerRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Dealer updated", dealerService.update(id, request)));

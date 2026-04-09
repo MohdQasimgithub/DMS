@@ -93,10 +93,11 @@ export default function LogsPage() {
 
       {/* Log output */}
       <Paper variant="outlined" sx={{
-        bgcolor: '#0d1117', color: '#c9d1d9',
-        fontFamily: 'monospace', fontSize: '0.75rem',
-        p: 2, maxHeight: '65vh', overflowY: 'auto',
-        borderRadius: 2,
+        bgcolor: '#0f172a', color: '#e2e8f0',
+        fontFamily: '"JetBrains Mono", "Fira Code", "Courier New", monospace',
+        fontSize: '0.75rem',
+        p: 2.5, maxHeight: '65vh', overflowY: 'auto',
+        borderRadius: 2, border: '1px solid #1e293b',
       }}>
         {isLoading ? (
           <Box display="flex" justifyContent="center" p={4}>

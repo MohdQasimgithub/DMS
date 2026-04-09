@@ -17,6 +17,8 @@ public class UserResponse {
     private int failedLoginAttempts;
     private LocalDateTime lastLoginAt;
     private Set<String> roles;
+    private Long dealerId;
+    private String dealerName;
     private String createdBy;
     private LocalDateTime createdAt;
     private String updatedBy;

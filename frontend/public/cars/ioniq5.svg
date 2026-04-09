@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a1a"/>
+      <stop offset="100%" style="stop-color:#1a1a3a"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d0d8e0"/>
+      <stop offset="50%" style="stop-color:#f0f4f8"/>
+      <stop offset="100%" style="stop-color:#a8b8c8"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#90b8d0;stop-opacity:0.85"/>
+      <stop offset="100%" style="stop-color:#5888a8;stop-opacity:0.7"/>
+    </linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.5"/></filter>
+    <radialGradient id="wheel" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" style="stop-color:#666"/>
+      <stop offset="100%" style="stop-color:#111"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#00AAD2;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#00AAD2;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <!-- Stars -->
+  <circle cx="100" cy="80" r="1.5" fill="#ffffff" opacity="0.6"/>
+  <circle cx="250" cy="50" r="1" fill="#ffffff" opacity="0.4"/>
+  <circle cx="600" cy="70" r="1.5" fill="#ffffff" opacity="0.5"/>
+  <circle cx="700" cy="40" r="1" fill="#ffffff" opacity="0.6"/>
+  <circle cx="450" cy="90" r="1" fill="#ffffff" opacity="0.3"/>
+  <!-- Ground glow -->
+  <ellipse cx="400" cy="360" rx="340" ry="35" fill="url(#glow)"/>
+  <!-- Shadow -->
+  <ellipse cx="400" cy="358" rx="290" ry="20" fill="#000" opacity="0.4"/>
+  <g filter="url(#shadow)">
+    <!-- SUV body - taller, boxier -->
+    <path d="M110 315 L110 255 Q115 228 148 215 L210 195 Q255 178 330 172 L470 172 Q545 178 590 195 L652 215 Q685 228 690 255 L690 315 Z" fill="url(#body)"/>
+    <!-- Roof - flat SUV style -->
+    <path d="M215 195 Q240 168 285 160 L515 160 Q560 168 585 195 Z" fill="url(#glass)"/>
+    <!-- Windshield -->
+    <path d="M225 193 Q248 170 288 162 L390 160 L390 193 Z" fill="#6898b8" opacity="0.8"/>
+    <!-- Rear glass -->
+    <path d="M410 160 L512 162 Q552 170 575 193 L410 193 Z" fill="#6898b8" opacity="0.8"/>
+    <!-- Side windows -->
+    <rect x="230" y="178" width="65" height="25" rx="3" fill="#6898b8" opacity="0.65"/>
+    <rect x="305" y="172" width="85" height="30" rx="3" fill="#6898b8" opacity="0.75"/>
+    <rect x="410" y="172" width="85" height="30" rx="3" fill="#6898b8" opacity="0.75"/>
+    <rect x="505" y="178" width="65" height="25" rx="3" fill="#6898b8" opacity="0.65"/>
+    <!-- Door lines -->
+    <line x1="305" y1="193" x2="305" y2="315" stroke="#8898a8" stroke-width="1.5" opacity="0.5"/>
+    <line x1="400" y1="172" x2="400" y2="315" stroke="#8898a8" stroke-width="1.5" opacity="0.5"/>
+    <line x1="495" y1="193" x2="495" y2="315" stroke="#8898a8" stroke-width="1.5" opacity="0.5"/>
+    <!-- Body crease -->
+    <path d="M118 265 Q400 252 682 265" stroke="#b8c8d8" stroke-width="2.5" fill="none" opacity="0.7"/>
+    <!-- Pixel headlights (IONIQ 5 signature) -->
+    <rect x="110" y="240" width="35" height="6" rx="1" fill="#00d4ff" opacity="0.95"/>
+    <rect x="110" y="250" width="35" height="6" rx="1" fill="#00d4ff" opacity="0.7"/>
+    <rect x="110" y="260" width="35" height="6" rx="1" fill="#00d4ff" opacity="0.5"/>
+    <!-- Pixel rear lights -->
+    <rect x="655" y="240" width="35" height="6" rx="1" fill="#ff2222" opacity="0.95"/>
+    <rect x="655" y="250" width="35" height="6" rx="1" fill="#ff2222" opacity="0.7"/>
+    <rect x="655" y="260" width="35" height="6" rx="1" fill="#ff2222" opacity="0.5"/>
+    <!-- Front bumper -->
+    <path d="M110 278 L148 285 L148 313 L110 315 Z" fill="#1a2030"/>
+    <!-- Hyundai H logo -->
+    <circle cx="140" cy="298" r="11" fill="#002C5F" stroke="#00AAD2" stroke-width="2"/>
+    <text x="140" y="302" text-anchor="middle" fill="#00AAD2" font-size="11" font-weight="bold" font-family="Arial">H</text>
+    <circle cx="660" cy="298" r="11" fill="#002C5F" stroke="#ff4444" stroke-width="2"/>
+    <text x="660" y="302" text-anchor="middle" fill="#ff4444" font-size="11" font-weight="bold" font-family="Arial">H</text>
+    <!-- Wheels -->
+    <circle cx="218" cy="322" r="44" fill="#111"/>
+    <circle cx="218" cy="322" r="40" fill="url(#wheel)"/>
+    <circle cx="218" cy="322" r="30" fill="#1a1a1a"/>
+    <circle cx="218" cy="322" r="15" fill="#333"/>
+    <circle cx="218" cy="322" r="6" fill="#555"/>
+    <line x1="218" y1="292" x2="218" y2="352" stroke="#444" stroke-width="3.5"/>
+    <line x1="188" y1="322" x2="248" y2="322" stroke="#444" stroke-width="3.5"/>
+    <line x1="197" y1="301" x2="239" y2="343" stroke="#444" stroke-width="3.5"/>
+    <line x1="239" y1="301" x2="197" y2="343" stroke="#444" stroke-width="3.5"/>
+    <circle cx="582" cy="322" r="44" fill="#111"/>
+    <circle cx="582" cy="322" r="40" fill="url(#wheel)"/>
+    <circle cx="582" cy="322" r="30" fill="#1a1a1a"/>
+    <circle cx="582" cy="322" r="15" fill="#333"/>
+    <circle cx="582" cy="322" r="6" fill="#555"/>
+    <line x1="582" y1="292" x2="582" y2="352" stroke="#444" stroke-width="3.5"/>
+    <line x1="552" y1="322" x2="612" y2="322" stroke="#444" stroke-width="3.5"/>
+    <line x1="561" y1="301" x2="603" y2="343" stroke="#444" stroke-width="3.5"/>
+    <line x1="603" y1="301" x2="561" y2="343" stroke="#444" stroke-width="3.5"/>
+    <!-- Wheel arches -->
+    <path d="M174 315 Q218 270 262 315" stroke="#a0b0c0" stroke-width="3" fill="none"/>
+    <path d="M538 315 Q582 270 626 315" stroke="#a0b0c0" stroke-width="3" fill="none"/>
+    <!-- Underbody -->
+    <rect x="262" y="312" width="276" height="8" rx="4" fill="#7080a0"/>
+    <!-- Roof rack detail -->
+    <rect x="285" y="158" width="230" height="4" rx="2" fill="#8898a8" opacity="0.5"/>
+  </g>
+  <text x="400" y="405" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif" letter-spacing="4">IONIQ 5</text>
+  <text x="400" y="430" text-anchor="middle" fill="#00AAD2" font-size="13" font-family="Arial, sans-serif" letter-spacing="2">ELECTRIC SUV</text>
+</svg>

@@ -28,14 +28,15 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get all users with pagination")
+    @Operation(summary = "Get all users with pagination and search")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAll(
+            @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        return ResponseEntity.ok(ApiResponse.success(userService.getAll(PageRequest.of(page, size, sort))));
+        return ResponseEntity.ok(ApiResponse.success(userService.getAll(search, PageRequest.of(page, size, sort))));
     }
 
     @GetMapping("/{id}")
@@ -46,15 +47,15 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create new user")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER')")
+    @Operation(summary = "Create new user — ADMIN can create DEALER or EMPLOYEE, DEALER can only create EMPLOYEE")
     public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody UserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User created successfully", userService.create(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER')")
     @Operation(summary = "Update user")
     public ResponseEntity<ApiResponse<UserResponse>> update(@PathVariable Long id,
                                                              @Valid @RequestBody UserRequest request) {
@@ -75,5 +76,15 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> unlock(@PathVariable Long id) {
         userService.unlockAccount(id);
         return ResponseEntity.ok(ApiResponse.success("Account unlocked", null));
+    }
+
+    @PatchMapping("/{id}/expire")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Set account expiry date")
+    public ResponseEntity<ApiResponse<Void>> expireAccount(
+            @PathVariable Long id,
+            @RequestParam(required = false) String expireAt) {
+        userService.setAccountExpiry(id, expireAt);
+        return ResponseEntity.ok(ApiResponse.success("Account expiry updated", null));
     }
 }

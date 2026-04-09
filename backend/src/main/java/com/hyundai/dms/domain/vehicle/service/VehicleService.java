@@ -25,9 +25,11 @@ public class VehicleService {
     private final DealerRepository dealerRepository;
 
     @Transactional(readOnly = true)
-    public PageResponse<VehicleResponse> getAll(Pageable pageable) {
-        Page<VehicleResponse> page = vehicleRepository.findAll(pageable).map(this::toResponse);
-        return PageResponse.of(page);
+    public PageResponse<VehicleResponse> getAll(String search, Vehicle.VehicleStatus status, Pageable pageable) {
+        String statusStr = status != null ? status.name() : null;
+        // showAll=true only when admin explicitly filters by a specific status
+        boolean showAll = statusStr != null && !statusStr.isEmpty();
+        return PageResponse.of(vehicleRepository.search(search, statusStr, showAll, pageable).map(this::toResponse));
     }
 
     @Transactional(readOnly = true)

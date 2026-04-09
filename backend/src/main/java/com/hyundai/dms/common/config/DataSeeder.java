@@ -4,10 +4,14 @@ import com.hyundai.dms.domain.config.entity.AppConfig;
 import com.hyundai.dms.domain.config.repository.AppConfigRepository;
 import com.hyundai.dms.domain.dealer.entity.Dealer;
 import com.hyundai.dms.domain.dealer.repository.DealerRepository;
+import com.hyundai.dms.domain.enquiry.entity.Enquiry;
+import com.hyundai.dms.domain.enquiry.repository.EnquiryRepository;
 import com.hyundai.dms.domain.menu.entity.Menu;
 import com.hyundai.dms.domain.menu.repository.MenuRepository;
 import com.hyundai.dms.domain.role.entity.Role;
 import com.hyundai.dms.domain.role.repository.RoleRepository;
+import com.hyundai.dms.domain.testdrive.entity.TestDrive;
+import com.hyundai.dms.domain.testdrive.repository.TestDriveRepository;
 import com.hyundai.dms.domain.user.entity.User;
 import com.hyundai.dms.domain.user.repository.UserRepository;
 import com.hyundai.dms.domain.vehicle.entity.Vehicle;
@@ -34,6 +38,8 @@ public class DataSeeder implements CommandLineRunner {
     private final MenuRepository menuRepository;
     private final DealerRepository dealerRepository;
     private final VehicleRepository vehicleRepository;
+    private final TestDriveRepository testDriveRepository;
+    private final EnquiryRepository enquiryRepository;
     private final AppConfigRepository configRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -100,6 +106,8 @@ public class DataSeeder implements CommandLineRunner {
         seedUsers();
         seedDealers();
         seedVehicles();
+        seedTestDrives();
+        seedEnquiries();
         seedConfigs();
         log.info("✅ Seeding done — users:{}, dealers:{}, vehicles:{}",
                 userRepository.count(), dealerRepository.count(), vehicleRepository.count());
@@ -346,5 +354,135 @@ public class DataSeeder implements CommandLineRunner {
                 .configKey(key).configValue(val)
                 .configGroup(group).description(desc)
                 .editable(editable).build();
+    }
+
+    // ── TEST DRIVES ──────────────────────────────────────────────────────────
+
+    private void seedTestDrives() {
+        if (testDriveRepository.count() > 0) return;
+
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<Dealer>  dealers  = dealerRepository.findAll();
+
+        String[][] customers = {
+            {"Kim Jae-won",   "01012345001", "jaewon.kim@gmail.com"},
+            {"Park Min-jun",  "01012345002", "minjun.park@naver.com"},
+            {"Lee Soo-yeon",  "01012345003", "sooyeon.lee@kakao.com"},
+            {"Choi Hyun-soo", "01012345004", "hyunsoo.choi@gmail.com"},
+            {"Jung Da-eun",   "01012345005", "daeun.jung@naver.com"},
+            {"Kang Ji-ho",    "01012345006", "jiho.kang@gmail.com"},
+            {"Yoon Tae-yang", "01012345007", "taeyang.yoon@kakao.com"},
+            {"Lim Bo-ra",     "01012345008", "bora.lim@gmail.com"},
+            {"Han Cheol-su",  "01012345009", "cheolsu.han@naver.com"},
+            {"Oh Na-ra",      "01012345010", "nara.oh@gmail.com"},
+            {"Shin Seung-hwan","01012345011","seunghwan.shin@kakao.com"},
+            {"Kwon Hye-jin",  "01012345012", "hyejin.kwon@gmail.com"},
+            {"Jang Dong-hyun","01012345013", "donghyun.jang@naver.com"},
+            {"Hong Ji-yeon",  "01012345014", "jiyeon.hong@gmail.com"},
+            {"Ko Sang-woo",   "01012345015", "sangwoo.ko@kakao.com"},
+            {"Moon Mi-rae",   "01012345016", "mirae.moon@gmail.com"},
+            {"Bae Joon-ho",   "01012345017", "joonho.bae@naver.com"},
+            {"Ryu Ye-jin",    "01012345018", "yejin.ryu@gmail.com"},
+            {"Ahn Woo-jin",   "01012345019", "woojin.ahn@kakao.com"},
+            {"Song So-yeon",  "01012345020", "soyeon.song@gmail.com"},
+            {"Nam Byung-chul","01012345021", "byungchul.nam@naver.com"},
+            {"Hwang Eun-ji",  "01012345022", "eunji.hwang@gmail.com"},
+            {"Seo Kyung-min", "01012345023", "kyungmin.seo@kakao.com"},
+            {"Jeon Ha-eun",   "01012345024", "haeun.jeon@gmail.com"},
+            {"Im Sung-jin",   "01012345025", "sungjin.im@naver.com"},
+        };
+
+        TestDrive.TestDriveStatus[] statuses = TestDrive.TestDriveStatus.values();
+        String[] times = {"09:00","10:00","11:00","13:00","14:00","15:00","16:00"};
+        String[] notes = {
+            "Customer interested in electric range",
+            "Comparing with competitor model",
+            "First time Hyundai buyer",
+            "Upgrading from older model",
+            "Corporate fleet inquiry",
+            "Interested in financing options",
+            null, null
+        };
+
+        List<TestDrive> list = new ArrayList<>();
+        for (int i = 0; i < customers.length; i++) {
+            Vehicle v = vehicles.get(i % vehicles.size());
+            Dealer  d = dealers.get(i % dealers.size());
+            TestDrive.TestDriveStatus status = i < 10 ? TestDrive.TestDriveStatus.SCHEDULED
+                    : i < 17 ? TestDrive.TestDriveStatus.COMPLETED
+                    : i < 22 ? TestDrive.TestDriveStatus.CANCELLED
+                    : TestDrive.TestDriveStatus.NO_SHOW;
+
+            list.add(TestDrive.builder()
+                    .customerName(customers[i][0])
+                    .customerPhone(customers[i][1])
+                    .customerEmail(customers[i][2])
+                    .scheduledDate(java.time.LocalDate.now().plusDays(i - 5))
+                    .scheduledTime(java.time.LocalTime.parse(times[i % times.length]))
+                    .notes(notes[i % notes.length])
+                    .status(status)
+                    .vehicle(v)
+                    .dealer(d)
+                    .build());
+        }
+        testDriveRepository.saveAll(list);
+        log.info("Test drives seeded: {}", list.size());
+    }
+
+    // ── ENQUIRIES ────────────────────────────────────────────────────────────
+
+    private void seedEnquiries() {
+        if (enquiryRepository.count() > 0) return;
+
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<Dealer>  dealers  = dealerRepository.findAll();
+
+        Object[][] enquiryData = {
+            {"Kim Min-su",    "01098760001", "minsu.kim@gmail.com",   Enquiry.EnquiryType.PURCHASE,   "I am interested in buying the IONIQ 6 Long Range. What are the available colors and financing options?",   Enquiry.EnquiryStatus.NEW},
+            {"Lee Ji-young",  "01098760002", "jiyoung.lee@naver.com", Enquiry.EnquiryType.TEST_DRIVE, "Would like to schedule a test drive for the Tucson Hybrid this weekend.",                                   Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Park Sung-ho",  "01098760003", "sungho.park@kakao.com", Enquiry.EnquiryType.FINANCING,  "What financing plans are available for the Santa Fe? I am looking for 48-month installment.",              Enquiry.EnquiryStatus.NEW},
+            {"Choi Yeon-ji",  "01098760004", "yeonji.choi@gmail.com", Enquiry.EnquiryType.PURCHASE,   "Interested in Sonata N Line. Is the Sonic Blue color available at your Seoul branch?",                    Enquiry.EnquiryStatus.RESOLVED},
+            {"Jung Woo-seok", "01098760005", "wooseok.jung@naver.com",Enquiry.EnquiryType.SERVICE,    "My Elantra needs a 60,000km service. Can I book an appointment for next Monday?",                         Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Kang Hee-jin",  "01098760006", "heejin.kang@gmail.com", Enquiry.EnquiryType.PURCHASE,   "Looking for IONIQ 5 AWD in Phantom Black. What is the current waiting period?",                          Enquiry.EnquiryStatus.NEW},
+            {"Yoon Jae-hyun", "01098760007", "jaehyun.yoon@kakao.com",Enquiry.EnquiryType.TEST_DRIVE, "Can I test drive the Palisade Diesel? I have a family of 6 and need a large SUV.",                       Enquiry.EnquiryStatus.RESOLVED},
+            {"Lim Soo-bin",   "01098760008", "soobin.lim@gmail.com",  Enquiry.EnquiryType.GENERAL,    "What is the difference between IONIQ 5 and IONIQ 6? Which one is better for highway driving?",           Enquiry.EnquiryStatus.RESOLVED},
+            {"Han Dong-jun",  "01098760009", "dongjun.han@naver.com", Enquiry.EnquiryType.PURCHASE,   "I want to buy a Kona Electric for city commuting. What is the real-world range?",                        Enquiry.EnquiryStatus.NEW},
+            {"Oh Soo-jin",    "01098760010", "soojin.oh@gmail.com",   Enquiry.EnquiryType.FINANCING,  "Is there a zero-interest financing option for the Tucson PHEV?",                                          Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Shin Byung-ho", "01098760011", "byungho.shin@kakao.com",Enquiry.EnquiryType.SERVICE,    "Need to replace brake pads on my 2022 Santa Fe. How much does it cost?",                                  Enquiry.EnquiryStatus.CLOSED},
+            {"Kwon Ye-seul",  "01098760012", "yeseul.kwon@gmail.com", Enquiry.EnquiryType.PURCHASE,   "Interested in Staria for family use. Does it come with a sunroof option?",                               Enquiry.EnquiryStatus.NEW},
+            {"Jang Hyun-woo", "01098760013", "hyunwoo.jang@naver.com",Enquiry.EnquiryType.TEST_DRIVE, "Would like to test drive the Venue. I am a first-time car buyer.",                                       Enquiry.EnquiryStatus.NEW},
+            {"Hong Soo-yeon", "01098760014", "sooyeon.hong@gmail.com",Enquiry.EnquiryType.PURCHASE,   "Looking for a corporate fleet deal for 10 Sonata Hybrids. Please contact me.",                           Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Ko Ji-min",     "01098760015", "jimin.ko@kakao.com",    Enquiry.EnquiryType.GENERAL,    "What government subsidies are available for electric vehicles in Seoul?",                                  Enquiry.EnquiryStatus.RESOLVED},
+            {"Moon Tae-jun",  "01098760016", "taejun.moon@gmail.com", Enquiry.EnquiryType.PURCHASE,   "I want to trade in my 2020 Tucson and upgrade to the new Santa Fe Hybrid.",                              Enquiry.EnquiryStatus.NEW},
+            {"Bae Eun-soo",   "01098760017", "eunsoo.bae@naver.com",  Enquiry.EnquiryType.SERVICE,    "My IONIQ 5 battery warning light is on. Is this covered under warranty?",                                Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Ryu Sang-min",  "01098760018", "sangmin.ryu@gmail.com", Enquiry.EnquiryType.TEST_DRIVE, "Can I test drive the IONIQ 6 AWD? I want to compare it with the RWD version.",                          Enquiry.EnquiryStatus.RESOLVED},
+            {"Ahn Ji-soo",    "01098760019", "jisoo.ahn@kakao.com",   Enquiry.EnquiryType.FINANCING,  "What is the monthly installment for Palisade Petrol over 60 months?",                                    Enquiry.EnquiryStatus.NEW},
+            {"Song Hyun-ji",  "01098760020", "hyunji.song@gmail.com", Enquiry.EnquiryType.PURCHASE,   "Is the Elantra N Line available in Performance Blue at Busan branch?",                                   Enquiry.EnquiryStatus.RESOLVED},
+            {"Nam Woo-hyun",  "01098760021", "woohyun.nam@naver.com", Enquiry.EnquiryType.GENERAL,    "What is the warranty period for Hyundai electric vehicles?",                                             Enquiry.EnquiryStatus.CLOSED},
+            {"Hwang So-ra",   "01098760022", "sora.hwang@gmail.com",  Enquiry.EnquiryType.PURCHASE,   "Looking for Kona Electric in Cyber Grey. What is the delivery timeline?",                               Enquiry.EnquiryStatus.NEW},
+            {"Seo Joon-young","01098760023", "joonyoung.seo@kakao.com",Enquiry.EnquiryType.SERVICE,   "Need full car inspection before long road trip. Can I book for this Saturday?",                          Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Jeon Min-kyung","01098760024", "minkyung.jeon@gmail.com",Enquiry.EnquiryType.TEST_DRIVE,"I would like to test drive the Tucson Hybrid and PHEV back to back.",                                    Enquiry.EnquiryStatus.IN_PROGRESS},
+            {"Im Hae-won",    "01098760025", "haewon.im@naver.com",   Enquiry.EnquiryType.FINANCING,  "Can I get pre-approval for a car loan before visiting the showroom?",                                    Enquiry.EnquiryStatus.NEW},
+        };
+
+        List<Enquiry> list = new ArrayList<>();
+        for (int i = 0; i < enquiryData.length; i++) {
+            Object[] row = enquiryData[i];
+            Vehicle v = i < vehicles.size() ? vehicles.get(i) : vehicles.get(i % vehicles.size());
+            Dealer  d = dealers.get(i % dealers.size());
+
+            list.add(Enquiry.builder()
+                    .customerName((String) row[0])
+                    .customerPhone((String) row[1])
+                    .customerEmail((String) row[2])
+                    .enquiryType((Enquiry.EnquiryType) row[3])
+                    .message((String) row[4])
+                    .status((Enquiry.EnquiryStatus) row[5])
+                    .vehicle(v)
+                    .dealer(d)
+                    .build());
+        }
+        enquiryRepository.saveAll(list);
+        log.info("Enquiries seeded: {}", list.size());
     }
 }

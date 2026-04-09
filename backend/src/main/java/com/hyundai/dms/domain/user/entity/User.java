@@ -1,6 +1,7 @@
 package com.hyundai.dms.domain.user.entity;
 
 import com.hyundai.dms.common.entity.BaseEntity;
+import com.hyundai.dms.domain.dealer.entity.Dealer;
 import com.hyundai.dms.domain.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -57,6 +58,11 @@ public class User extends BaseEntity {
 
     @Column(name = "account_expired_at")
     private LocalDateTime accountExpiredAt;
+
+    // Which dealer this user belongs to (set for DEALER and EMPLOYEE roles)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dealer_id")
+    private Dealer dealer;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

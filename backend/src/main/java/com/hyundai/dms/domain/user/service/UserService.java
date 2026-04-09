@@ -1,8 +1,13 @@
 package com.hyundai.dms.domain.user.service;
 
+import com.hyundai.dms.domain.auditlog.entity.AuditLog;
+import com.hyundai.dms.domain.auditlog.service.AuditLogService;
+import com.hyundai.dms.common.exception.BusinessException;
 import com.hyundai.dms.common.exception.DuplicateResourceException;
 import com.hyundai.dms.common.exception.ResourceNotFoundException;
 import com.hyundai.dms.common.response.PageResponse;
+import com.hyundai.dms.domain.dealer.entity.Dealer;
+import com.hyundai.dms.domain.dealer.repository.DealerRepository;
 import com.hyundai.dms.domain.role.entity.Role;
 import com.hyundai.dms.domain.role.repository.RoleRepository;
 import com.hyundai.dms.domain.user.dto.UserRequest;
@@ -11,8 +16,9 @@ import com.hyundai.dms.domain.user.entity.User;
 import com.hyundai.dms.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -29,12 +35,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final DealerRepository dealerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
-    public PageResponse<UserResponse> getAll(Pageable pageable) {
-        Page<UserResponse> page = userRepository.findAll(pageable).map(this::toResponse);
-        return PageResponse.of(page);
+    public PageResponse<UserResponse> getAll(String search, Pageable pageable) {
+        return PageResponse.of(userRepository.search(search, pageable).map(this::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -44,6 +51,32 @@ public class UserService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public UserResponse create(UserRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+
+        // ── Role hierarchy enforcement ────────────────────────────────────────
+        if (isDealer && !isAdmin) {
+            // Dealer can only create EMPLOYEE accounts
+            if (request.getRoleIds() != null) {
+                for (Long roleId : request.getRoleIds()) {
+                    Role role = roleRepository.findById(roleId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
+                    if (!role.getRoleName().equals("EMPLOYEE")) {
+                        throw new BusinessException("Dealers can only create Employee accounts.");
+                    }
+                }
+            }
+            // Auto-assign the dealer's own dealerId to the employee they create
+            if (request.getDealerId() == null) {
+                User dealerUser = userRepository.findByUsername(auth.getName())
+                        .orElseThrow(() -> new BusinessException("Dealer user not found"));
+                if (dealerUser.getDealer() != null) {
+                    request.setDealerId(dealerUser.getDealer().getId());
+                }
+            }
+        }
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateResourceException("Username already exists: " + request.getUsername());
         }
@@ -62,8 +95,18 @@ public class UserService {
                 .roles(roles)
                 .build();
 
+        // Link to dealer if dealerId provided
+        if (request.getDealerId() != null) {
+            Dealer dealer = dealerRepository.findById(request.getDealerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Dealer", request.getDealerId()));
+            user.setDealer(dealer);
+        }
+
         User saved = userRepository.save(user);
-        log.info("Created user: {}", saved.getUsername());
+        log.info("Created user: {} linked to dealer: {}", saved.getUsername(),
+                saved.getDealer() != null ? saved.getDealer().getDealerName() : "none");
+        auditLogService.log(AuditLog.AuditAction.USER_CREATED,
+                "New user created: " + saved.getUsername(), "User", saved.getUsername());
         return toResponse(saved);
     }
 
@@ -92,7 +135,10 @@ public class UserService {
             user.setRoles(resolveRoles(request.getRoleIds()));
         }
 
-        return toResponse(userRepository.save(user));
+        UserResponse result = toResponse(userRepository.save(user));
+        auditLogService.log(AuditLog.AuditAction.USER_UPDATED,
+                "User updated: " + user.getUsername(), "User", user.getUsername());
+        return result;
     }
 
     @Transactional
@@ -101,6 +147,8 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
         log.info("Deactivated user: {}", user.getUsername());
+        auditLogService.log(AuditLog.AuditAction.USER_DEACTIVATED,
+                "User deactivated: " + user.getUsername(), "User", user.getUsername());
     }
 
     @Transactional
@@ -110,6 +158,25 @@ public class UserService {
         user.resetFailedAttempts();
         userRepository.save(user);
         log.info("Unlocked account: {}", user.getUsername());
+        auditLogService.log(AuditLog.AuditAction.USER_UNLOCKED,
+                "Account unlocked: " + user.getUsername(), "User", user.getUsername());
+    }
+
+    /**
+     * Sets or clears account expiry.
+     * Expired accounts are rejected at login via CustomUserDetailsService.accountExpired().
+     * Demonstrates the "Expire Account" security requirement.
+     */
+    @Transactional
+    public void setAccountExpiry(Long id, String expireAt) {
+        User user = findById(id);
+        if (expireAt == null || expireAt.isBlank()) {
+            user.setAccountExpiredAt(null); // clear expiry
+        } else {
+            user.setAccountExpiredAt(java.time.LocalDateTime.parse(expireAt));
+        }
+        userRepository.save(user);
+        log.info("Account expiry set for user: {} -> {}", user.getUsername(), expireAt);
     }
 
     private User findById(Long id) {
@@ -137,6 +204,10 @@ public class UserService {
         res.setFailedLoginAttempts(user.getFailedLoginAttempts());
         res.setLastLoginAt(user.getLastLoginAt());
         res.setRoles(user.getRoles().stream().map(Role::getRoleName).collect(Collectors.toSet()));
+        if (user.getDealer() != null) {
+            res.setDealerId(user.getDealer().getId());
+            res.setDealerName(user.getDealer().getDealerName());
+        }
         res.setCreatedBy(user.getCreatedBy());
         res.setCreatedAt(user.getCreatedAt());
         res.setUpdatedBy(user.getUpdatedBy());

@@ -1,12 +1,24 @@
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Breadcrumbs } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
-export default function PageHeader({ title, onAdd, addLabel = 'Add New' }) {
+export default function PageHeader({ title, subtitle, onAdd, addLabel = 'Add New' }) {
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-      <Typography variant="h5" fontWeight="bold">{title}</Typography>
+      <Box>
+        <Typography variant="h5" fontWeight={800} color="text.primary" lineHeight={1.2}>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography variant="body2" color="text.secondary" mt={0.3}>{subtitle}</Typography>
+        )}
+      </Box>
       {onAdd && (
-        <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}
+          sx={{
+            background: 'linear-gradient(135deg, #002C5F, #1a4a7a)',
+            '&:hover': { background: 'linear-gradient(135deg, #001a3a, #002C5F)' },
+            px: 2.5, py: 1,
+          }}>
           {addLabel}
         </Button>
       )}

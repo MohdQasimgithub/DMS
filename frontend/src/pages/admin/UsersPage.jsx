@@ -4,25 +4,31 @@ import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { Edit, Delete, LockOpen } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import SearchBar from '../../components/common/SearchBar';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import UserFormDialog from './UserFormDialog';
 import { userApi } from '../../api/userApi';
 import { useNotify } from '../../hooks/useNotify';
 import { useApiError } from '../../hooks/useApiError';
 
+import { useAuthStore } from '../../store/authStore';
+
 export default function UsersPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const queryClient = useQueryClient();
   const notify = useNotify();
   const { handleError } = useApiError();
+  const { hasRole } = useAuthStore();
+  const isAdmin = hasRole('ADMIN');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['users', page, pageSize],
-    queryFn: () => userApi.getAll({ page, size: pageSize }),
+    queryKey: ['users', page, pageSize, search],
+    queryFn: () => userApi.getAll({ page, size: pageSize, search }),
     select: (res) => res.data.data,
   });
 
@@ -86,7 +92,14 @@ export default function UsersPage() {
 
   return (
     <Box>
-      <PageHeader title="Users" onAdd={() => { setEditData(null); setFormOpen(true); }} />
+      <PageHeader
+        title={isAdmin ? 'Users' : 'Manage Employees'}
+        subtitle={isAdmin ? undefined : 'You can create and manage employee accounts'}
+        onAdd={() => { setEditData(null); setFormOpen(true); }}
+      />
+      <Box mb={2}>
+        <SearchBar placeholder="Search by username, full name, email..." onSearch={(v) => { setSearch(v); setPage(0); }} />
+      </Box>
       <DataGrid
         rows={data?.content || []}
         columns={columns}
@@ -99,7 +112,7 @@ export default function UsersPage() {
         autoHeight
         disableRowSelectionOnClick
       />
-      <UserFormDialog open={formOpen} onClose={() => setFormOpen(false)} editData={editData} />
+      <UserFormDialog open={formOpen} onClose={() => setFormOpen(false)} editData={editData} isDealer={!isAdmin} />
       <ConfirmDialog
         open={!!deleteId}
         message="Deactivate this user account?"

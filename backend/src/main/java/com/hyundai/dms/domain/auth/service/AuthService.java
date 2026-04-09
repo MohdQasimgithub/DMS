@@ -1,15 +1,20 @@
 package com.hyundai.dms.domain.auth.service;
 
+import com.hyundai.dms.domain.auditlog.entity.AuditLog;
+import com.hyundai.dms.domain.auditlog.service.AuditLogService;
 import com.hyundai.dms.common.exception.BusinessException;
 import com.hyundai.dms.common.exception.DuplicateResourceException;
 import com.hyundai.dms.domain.auth.dto.AuthResponse;
 import com.hyundai.dms.domain.auth.dto.LoginRequest;
 import com.hyundai.dms.domain.auth.dto.RegisterRequest;
+import com.hyundai.dms.domain.loginhistory.entity.LoginHistory;
+import com.hyundai.dms.domain.loginhistory.repository.LoginHistoryRepository;
 import com.hyundai.dms.domain.role.entity.Role;
 import com.hyundai.dms.domain.role.repository.RoleRepository;
 import com.hyundai.dms.domain.user.entity.User;
 import com.hyundai.dms.domain.user.repository.UserRepository;
 import com.hyundai.dms.security.jwt.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +26,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -36,9 +43,23 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginHistoryRepository loginHistoryRepository;
+    private final AuditLogService auditLogService;
 
     @Value("${app.max-login-attempts}")
     private int maxLoginAttempts;
+
+    private String getClientIp() {
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                String ip = req.getHeader("X-Forwarded-For");
+                return (ip != null && !ip.isEmpty()) ? ip.split(",")[0].trim() : req.getRemoteAddr();
+            }
+        } catch (Exception ignored) {}
+        return "unknown";
+    }
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -116,6 +137,21 @@ public class AuthService {
 
             log.info("User '{}' logged in successfully", user.getUsername());
 
+            // Record login history + audit log
+            loginHistoryRepository.save(LoginHistory.builder()
+                    .username(user.getUsername())
+                    .roles(user.getRoles().stream().map(Role::getRoleName).collect(Collectors.joining(", ")))
+                    .loginTime(LocalDateTime.now())
+                    .ipAddress(getClientIp())
+                    .status(LoginHistory.LoginStatus.SUCCESS)
+                    .build());
+
+            auditLogService.logWithUser(user.getUsername(),
+                    user.getRoles().stream().map(Role::getRoleName).collect(Collectors.joining(", ")),
+                    AuditLog.AuditAction.LOGIN,
+                    "User logged in successfully",
+                    "User", user.getUsername());
+
             return AuthResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
@@ -138,7 +174,26 @@ public class AuthService {
         int attempts = user.getFailedLoginAttempts() + 1;
         log.warn("Failed login attempt {} for user '{}'", attempts, user.getUsername());
 
-        if (attempts >= maxLoginAttempts) {
+        boolean willLock = attempts >= maxLoginAttempts;
+
+        // Record failed login history + audit
+        loginHistoryRepository.save(LoginHistory.builder()
+                .username(user.getUsername())
+                .roles(user.getRoles().stream().map(Role::getRoleName).collect(Collectors.joining(", ")))
+                .loginTime(LocalDateTime.now())
+                .ipAddress(getClientIp())
+                .status(willLock ? LoginHistory.LoginStatus.LOCKED : LoginHistory.LoginStatus.FAILED)
+                .failureReason(willLock ? "Account locked after " + attempts + " failed attempts" : "Invalid password (attempt " + attempts + ")")
+                .build());
+
+        auditLogService.logWithUser(user.getUsername(),
+                user.getRoles().stream().map(Role::getRoleName).collect(Collectors.joining(", ")),
+                willLock ? AuditLog.AuditAction.ACCOUNT_LOCKED : AuditLog.AuditAction.LOGIN_FAILED,
+                willLock ? "Account locked after " + attempts + " failed attempts"
+                         : "Failed login attempt " + attempts,
+                "User", user.getUsername());
+
+        if (willLock) {
             userRepository.lockAccount(user.getUsername());
             log.warn("Account '{}' locked after {} failed attempts", user.getUsername(), attempts);
             throw new LockedException("Account locked after " + maxLoginAttempts + " failed attempts");

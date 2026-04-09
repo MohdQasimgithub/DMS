@@ -1,5 +1,7 @@
 package com.hyundai.dms.domain.dealer.service;
 
+import com.hyundai.dms.domain.auditlog.entity.AuditLog;
+import com.hyundai.dms.domain.auditlog.service.AuditLogService;
 import com.hyundai.dms.common.exception.DuplicateResourceException;
 import com.hyundai.dms.common.exception.ResourceNotFoundException;
 import com.hyundai.dms.common.response.PageResponse;
@@ -8,9 +10,9 @@ import com.hyundai.dms.domain.dealer.dto.DealerResponse;
 import com.hyundai.dms.domain.dealer.entity.Dealer;
 import com.hyundai.dms.domain.dealer.repository.DealerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -21,19 +23,35 @@ import java.util.stream.Collectors;
 public class DealerService {
 
     private final DealerRepository dealerRepository;
+    private final AuditLogService auditLogService;
 
-    @Transactional(readOnly = true)
-    public PageResponse<DealerResponse> getAll(Pageable pageable) {
-        Page<DealerResponse> page = dealerRepository.findAll(pageable).map(this::toResponse);
-        return PageResponse.of(page);
+    /**
+     * READ_UNCOMMITTED would allow dirty reads (seeing uncommitted changes).
+     * We use READ_COMMITTED here — only committed data is visible.
+     * This prevents dirty reads but non-repeatable reads can still occur.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
+    public PageResponse<DealerResponse> getAll(String search, Dealer.DealerStatus status, Pageable pageable) {
+        String statusStr = status != null ? status.name() : null;
+        // showAll=true only when admin explicitly filters by a status (including INACTIVE)
+        boolean showAll = statusStr != null && !statusStr.isEmpty();
+        return PageResponse.of(dealerRepository.search(search, statusStr, showAll, pageable).map(this::toResponse));
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * REPEATABLE_READ ensures that if we read the same dealer twice in one transaction,
+     * we get the same result — prevents non-repeatable reads.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DealerResponse getById(Long id) {
         return toResponse(findById(id));
     }
 
-    @Transactional
+    /**
+     * READ_COMMITTED for writes — prevents dirty reads.
+     * Duplicate check + save is safe because we check existence before insert.
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public DealerResponse create(DealerRequest request) {
         if (dealerRepository.existsByDealerCode(request.getDealerCode())) {
             throw new DuplicateResourceException("Dealer code already exists: " + request.getDealerCode());
@@ -52,7 +70,7 @@ public class DealerService {
         return toResponse(dealerRepository.save(dealer));
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public DealerResponse update(Long id, DealerRequest request) {
         Dealer dealer = findById(id);
         if (!dealer.getDealerCode().equals(request.getDealerCode()) &&
@@ -71,19 +89,24 @@ public class DealerService {
         return toResponse(dealerRepository.save(dealer));
     }
 
-    @Transactional
+    /**
+     * SERIALIZABLE — highest isolation level.
+     * Prevents phantom reads: no new dealers can be inserted by another transaction
+     * while this delete transaction is running.
+     */
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void delete(Long id) {
         Dealer dealer = findById(id);
         dealer.setStatus(Dealer.DealerStatus.INACTIVE);
         dealerRepository.save(dealer);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<String> getRegions() {
         return dealerRepository.findDistinctRegions();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<DealerResponse> getActiveByRegion(String region) {
         return dealerRepository.findActiveByRegion(region).stream()
                 .map(this::toResponse)

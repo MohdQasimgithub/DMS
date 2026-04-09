@@ -27,4 +27,7 @@ public class UserRequest {
     private String phoneNumber;
 
     private Set<Long> roleIds;
+
+    // Which dealer this user belongs to (required for DEALER and EMPLOYEE)
+    private Long dealerId;
 }

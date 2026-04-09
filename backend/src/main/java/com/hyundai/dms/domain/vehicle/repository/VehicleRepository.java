@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +25,20 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, Queryds
 
     @Query("SELECT DISTINCT v.color FROM Vehicle v WHERE v.model = :model AND v.variant = :variant ORDER BY v.color")
     List<String> findColorsByModelAndVariant(@Param("model") String model, @Param("variant") String variant);
+
+    @Query("""
+        SELECT v FROM Vehicle v LEFT JOIN v.dealer d
+        WHERE (:search IS NULL OR :search = '' OR
+               LOWER(v.vin)     LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(v.model)   LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(v.variant) LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(v.color)   LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(d.dealerName) LIKE LOWER(CONCAT('%',:search,'%')))
+          AND (:statusStr IS NULL OR :statusStr = '' OR CAST(v.status AS string) = :statusStr)
+          AND (:showAll = true OR v.status <> 'SOLD')
+        """)
+    Page<Vehicle> search(@Param("search") String search,
+                         @Param("statusStr") String statusStr,
+                         @Param("showAll") boolean showAll,
+                         Pageable pageable);
 }

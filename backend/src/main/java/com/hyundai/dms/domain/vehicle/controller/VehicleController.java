@@ -5,6 +5,7 @@ import com.hyundai.dms.common.response.PageResponse;
 import com.hyundai.dms.domain.vehicle.dto.VehicleRequest;
 import com.hyundai.dms.domain.vehicle.dto.VehicleResponse;
 import com.hyundai.dms.domain.vehicle.service.VehicleService;
+import com.hyundai.dms.domain.vehicle.entity.Vehicle;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +28,14 @@ public class VehicleController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<VehicleResponse>>> getAll(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(required = false) Vehicle.VehicleStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "model") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        return ResponseEntity.ok(ApiResponse.success(vehicleService.getAll(PageRequest.of(page, size, sort))));
+        return ResponseEntity.ok(ApiResponse.success(vehicleService.getAll(search, status, PageRequest.of(page, size, sort))));
     }
 
     @GetMapping("/{id}")

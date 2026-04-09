@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#001a3a"/>
+      <stop offset="100%" style="stop-color:#003366"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#c8d8e8"/>
+      <stop offset="50%" style="stop-color:#e8f0f8"/>
+      <stop offset="100%" style="stop-color:#a0b8cc"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8d4e8;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#7aaac8;stop-opacity:0.7"/>
+    </linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.4"/></filter>
+    <radialGradient id="wheel" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" style="stop-color:#555"/>
+      <stop offset="100%" style="stop-color:#111"/>
+    </radialGradient>
+    <radialGradient id="ground" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#00AAD2;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#00AAD2;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <!-- Grid lines -->
+  <line x1="0" y1="150" x2="800" y2="150" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="300" x2="800" y2="300" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="200" y1="0" x2="200" y2="450" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="450" stroke="#ffffff08" stroke-width="1"/>
+  <!-- Ground glow -->
+  <ellipse cx="400" cy="360" rx="320" ry="30" fill="url(#ground)"/>
+  <!-- Car shadow -->
+  <ellipse cx="400" cy="355" rx="280" ry="18" fill="#000" opacity="0.35"/>
+  <!-- Car body group -->
+  <g filter="url(#shadow)">
+    <!-- Main body -->
+    <path d="M120 310 L120 270 Q125 240 160 225 L220 200 Q270 175 340 168 L460 168 Q530 175 580 200 L640 225 Q675 240 680 270 L680 310 Z" fill="url(#body)"/>
+    <!-- Roof/cabin -->
+    <path d="M230 200 Q260 165 310 155 L490 155 Q540 165 570 200 Z" fill="url(#glass)"/>
+    <!-- Windshield -->
+    <path d="M240 198 Q268 168 312 158 L380 156 L380 198 Z" fill="#7aaac8" opacity="0.8"/>
+    <!-- Rear glass -->
+    <path d="M420 156 L488 158 Q532 168 560 198 L420 198 Z" fill="#7aaac8" opacity="0.8"/>
+    <!-- Side windows -->
+    <rect x="245" y="175" width="60" height="22" rx="4" fill="#7aaac8" opacity="0.6"/>
+    <rect x="315" y="168" width="80" height="28" rx="4" fill="#7aaac8" opacity="0.7"/>
+    <rect x="405" y="168" width="80" height="28" rx="4" fill="#7aaac8" opacity="0.7"/>
+    <rect x="495" y="175" width="60" height="22" rx="4" fill="#7aaac8" opacity="0.6"/>
+    <!-- Door lines -->
+    <line x1="310" y1="198" x2="310" y2="310" stroke="#90a8bc" stroke-width="1.5" opacity="0.5"/>
+    <line x1="400" y1="168" x2="400" y2="310" stroke="#90a8bc" stroke-width="1.5" opacity="0.5"/>
+    <line x1="490" y1="198" x2="490" y2="310" stroke="#90a8bc" stroke-width="1.5" opacity="0.5"/>
+    <!-- Body crease line -->
+    <path d="M130 268 Q400 255 670 268" stroke="#b0c8dc" stroke-width="2" fill="none" opacity="0.6"/>
+    <!-- Front headlights -->
+    <path d="M120 255 L145 248 L145 272 L120 278 Z" fill="#00AAD2" opacity="0.9"/>
+    <rect x="120" y="252" width="8" height="28" rx="2" fill="#00d4ff" opacity="0.8"/>
+    <!-- Rear lights -->
+    <path d="M680 255 L655 248 L655 272 L680 278 Z" fill="#ff3333" opacity="0.9"/>
+    <rect x="672" y="252" width="8" height="28" rx="2" fill="#ff6666" opacity="0.8"/>
+    <!-- Front grille -->
+    <path d="M120 278 L155 285 L155 308 L120 310 Z" fill="#1a2a3a"/>
+    <rect x="125" y="285" width="25" height="3" rx="1" fill="#00AAD2" opacity="0.7"/>
+    <rect x="125" y="292" width="25" height="3" rx="1" fill="#00AAD2" opacity="0.7"/>
+    <rect x="125" y="299" width="25" height="3" rx="1" fill="#00AAD2" opacity="0.7"/>
+    <!-- Hyundai H logo front -->
+    <circle cx="138" cy="295" r="10" fill="#002C5F" stroke="#00AAD2" stroke-width="1.5"/>
+    <text x="138" y="299" text-anchor="middle" fill="#00AAD2" font-size="10" font-weight="bold" font-family="Arial">H</text>
+    <!-- Hyundai H logo rear -->
+    <circle cx="662" cy="295" r="10" fill="#002C5F" stroke="#ff4444" stroke-width="1.5"/>
+    <text x="662" y="299" text-anchor="middle" fill="#ff4444" font-size="10" font-weight="bold" font-family="Arial">H</text>
+    <!-- Wheels -->
+    <circle cx="220" cy="318" r="42" fill="#1a1a1a"/>
+    <circle cx="220" cy="318" r="38" fill="url(#wheel)"/>
+    <circle cx="220" cy="318" r="28" fill="#222"/>
+    <circle cx="220" cy="318" r="14" fill="#444"/>
+    <circle cx="220" cy="318" r="6" fill="#666"/>
+    <!-- Wheel spokes -->
+    <line x1="220" y1="290" x2="220" y2="346" stroke="#555" stroke-width="3"/>
+    <line x1="192" y1="318" x2="248" y2="318" stroke="#555" stroke-width="3"/>
+    <line x1="200" y1="298" x2="240" y2="338" stroke="#555" stroke-width="3"/>
+    <line x1="240" y1="298" x2="200" y2="338" stroke="#555" stroke-width="3"/>
+    <circle cx="580" cy="318" r="42" fill="#1a1a1a"/>
+    <circle cx="580" cy="318" r="38" fill="url(#wheel)"/>
+    <circle cx="580" cy="318" r="28" fill="#222"/>
+    <circle cx="580" cy="318" r="14" fill="#444"/>
+    <circle cx="580" cy="318" r="6" fill="#666"/>
+    <line x1="580" y1="290" x2="580" y2="346" stroke="#555" stroke-width="3"/>
+    <line x1="552" y1="318" x2="608" y2="318" stroke="#555" stroke-width="3"/>
+    <line x1="560" y1="298" x2="600" y2="338" stroke="#555" stroke-width="3"/>
+    <line x1="600" y1="298" x2="560" y2="338" stroke="#555" stroke-width="3"/>
+    <!-- Wheel arches -->
+    <path d="M178 310 Q220 268 262 310" stroke="#a0b8cc" stroke-width="3" fill="none"/>
+    <path d="M538 310 Q580 268 622 310" stroke="#a0b8cc" stroke-width="3" fill="none"/>
+    <!-- Underbody -->
+    <rect x="262" y="308" width="276" height="8" rx="4" fill="#8090a0"/>
+  </g>
+  <!-- Model name -->
+  <text x="400" y="405" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif" letter-spacing="4">IONIQ 6</text>
+  <text x="400" y="430" text-anchor="middle" fill="#00AAD2" font-size="13" font-family="Arial, sans-serif" letter-spacing="2">ELECTRIC SEDAN</text>
+</svg>

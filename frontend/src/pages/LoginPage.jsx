@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
-  Box, Card, CardContent, TextField, Button, Typography,
-  InputAdornment, IconButton, CircularProgress, Alert, Divider,
+  Box, TextField, Button, Typography, InputAdornment,
+  IconButton, CircularProgress, Alert, Divider,
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, DirectionsCar } from '@mui/icons-material';
 import { authApi } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 
@@ -23,89 +23,147 @@ export default function LoginPage() {
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: yupResolver(schema),
-  });
+  const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
 
   const onSubmit = async (data) => {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const res = await authApi.login(data);
       setAuth(res.data.data);
       navigate('/dashboard');
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Login failed. Please try again.';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+      setError(err?.response?.data?.message || 'Login failed. Please try again.');
+    } finally { setLoading(false); }
   };
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh"
-      sx={{ bgcolor: 'grey.100' }}>
-      <Card sx={{ width: 400, boxShadow: 4 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Box textAlign="center" mb={3}>
-            <Typography variant="h4" fontWeight="bold" color="primary">DMS</Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              Hyundai AutoEver Dealer Management
-            </Typography>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Left panel */}
+      <Box sx={{
+        display: { xs: 'none', md: 'flex' },
+        width: '50%',
+        background: 'linear-gradient(145deg, #002C5F 0%, #001a3a 60%, #00AAD2 100%)',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        p: 6,
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Decorative circles */}
+        <Box sx={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(0,170,210,0.1)' }} />
+        <Box sx={{ position: 'absolute', bottom: -60, left: -60, width: 250, height: 250, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+
+        <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 380 }}>
+          <Box sx={{
+            width: 72, height: 72, borderRadius: 3,
+            background: 'rgba(0,170,210,0.2)',
+            border: '1px solid rgba(0,170,210,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            mx: 'auto', mb: 3,
+          }}>
+            <DirectionsCar sx={{ fontSize: 36, color: '#00AAD2' }} />
+          </Box>
+          <Typography variant="h4" sx={{ color: '#fff', fontWeight: 800, mb: 1.5 }}>
+            Hyundai AutoEver
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 400, mb: 3 }}>
+            Dealer Management System
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.45)', lineHeight: 1.8 }}>
+            Manage your dealership network, vehicle inventory, test drives, and customer enquiries — all in one place.
+          </Typography>
+
+          {/* Stats */}
+          <Box display="flex" justifyContent="center" gap={4} mt={5}>
+            {[['Dealers', '50+'], ['Vehicles', '200+'], ['Regions', '14']].map(([label, val]) => (
+              <Box key={label} textAlign="center">
+                <Typography variant="h5" sx={{ color: '#00AAD2', fontWeight: 800 }}>{val}</Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)' }}>{label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Right panel */}
+      <Box sx={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f8fafc',
+        p: 3,
+      }}>
+        <Box sx={{ width: '100%', maxWidth: 420 }}>
+          {/* Mobile logo */}
+          <Box sx={{ display: { md: 'none' }, textAlign: 'center', mb: 4 }}>
+            <DirectionsCar sx={{ fontSize: 40, color: '#002C5F' }} />
+            <Typography variant="h5" fontWeight={800} color="primary">Hyundai AutoEver DMS</Typography>
           </Box>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <Typography variant="h5" fontWeight={800} color="text.primary" mb={0.5}>
+            Welcome back
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Sign in to your account to continue
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2, fontSize: '0.85rem' }}>{error}</Alert>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)}>
-            <TextField
-              {...register('username')}
-              label="Username"
-              fullWidth
-              margin="normal"
-              error={!!errors.username}
-              helperText={errors.username?.message}
-              autoFocus
-            />
-            <TextField
-              {...register('password')}
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              fullWidth
-              margin="normal"
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              size="large"
-              sx={{ mt: 2 }}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+            <Box mb={2}>
+              <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Username
+              </Typography>
+              <TextField
+                {...register('username')}
+                fullWidth size="small"
+                placeholder="Enter your username"
+                error={!!errors.username}
+                helperText={errors.username?.message}
+                autoFocus
+                sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
+              />
+            </Box>
+            <Box mb={3}>
+              <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Password
+              </Typography>
+              <TextField
+                {...register('password')}
+                type={showPassword ? 'text' : 'password'}
+                fullWidth size="small"
+                placeholder="Enter your password"
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+            <Button type="submit" variant="contained" fullWidth size="large" disabled={loading}
+              sx={{ py: 1.3, fontSize: '0.95rem', fontWeight: 700, borderRadius: 2,
+                background: 'linear-gradient(135deg, #002C5F, #1a4a7a)',
+                '&:hover': { background: 'linear-gradient(135deg, #001a3a, #002C5F)' } }}>
+              {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}
             </Button>
           </form>
 
-          <Divider sx={{ my: 2 }} />
-
-          <Typography variant="body2" textAlign="center" color="text.secondary">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" style={{ color: 'inherit', fontWeight: 600 }}>
-              Create one
-            </Link>
+          <Typography variant="caption" display="block" textAlign="center" color="text.disabled" mt={4}>
+            © 2026 Hyundai AutoEver. All rights reserved.
           </Typography>
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
     </Box>
   );
 }

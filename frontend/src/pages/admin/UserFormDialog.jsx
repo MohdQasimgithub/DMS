@@ -26,7 +26,7 @@ const schema = yup.object({
   roleIds: yup.array().of(yup.number()),
 });
 
-export default function UserFormDialog({ open, onClose, editData }) {
+export default function UserFormDialog({ open, onClose, editData, isDealer = false }) {
   const queryClient = useQueryClient();
   const notify = useNotify();
   const { handleError } = useApiError();
@@ -40,7 +40,10 @@ export default function UserFormDialog({ open, onClose, editData }) {
   const { data: roles } = useQuery({
     queryKey: ['roles-active'],
     queryFn: () => roleApi.getAllActive(),
-    select: (res) => res.data.data,
+    // Dealer can only assign EMPLOYEE role
+    select: (res) => isDealer
+      ? res.data.data.filter(r => r.roleName === 'EMPLOYEE')
+      : res.data.data,
     enabled: open,
   });
 
