@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Box, Grid, Card, CardMedia, CardContent, CardActions,
+  Box, Grid, Card, CardContent, CardActions,
   Typography, Chip, Button, TextField, MenuItem, InputAdornment,
-  Skeleton, Divider, Badge,
+  Skeleton, Divider,
 } from '@mui/material';
 import {
   DirectionsCar, DriveEta, ContactMail, Search,
@@ -14,23 +14,25 @@ import { vehicleApi } from '../../api/vehicleApi';
 import TestDriveFormDialog from '../testdrive/TestDriveFormDialog';
 import EnquiryFormDialog from '../enquiry/EnquiryFormDialog';
 
-// Reliable Wikimedia Commons direct image URLs (CC licensed, no CORS issues)
+// Unsplash car images — verified working, no CORS issues
 const MODEL_IMAGES = {
-  'IONIQ 6':       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Hyundai_IONIQ_6_CE_Gravity_Gold_Matte_%286%29.jpg/1280px-Hyundai_IONIQ_6_CE_Gravity_Gold_Matte_%286%29.jpg',
-  'IONIQ 5':       'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Hyundai_Ioniq_5.jpg/1280px-Hyundai_Ioniq_5.jpg',
-  'Tucson':        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/2022_Hyundai_Tucson_NX4_1.6_T-GDi_Hybrid_%28facelift%2C_white%29%2C_front_8.28.22.jpg/1280px-2022_Hyundai_Tucson_NX4_1.6_T-GDi_Hybrid_%28facelift%2C_white%29%2C_front_8.28.22.jpg',
-  'Santa Fe':      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/2021_Hyundai_Santa_Fe_%28TM%2C_facelift%29_2.2_CRDi_AWD_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2021_Hyundai_Santa_Fe_%28TM%2C_facelift%29_2.2_CRDi_AWD_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Sonata':        'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/2020_Hyundai_Sonata_%28DN8%29_2.0_MPI_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2020_Hyundai_Sonata_%28DN8%29_2.0_MPI_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Elantra':       'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/2021_Hyundai_Elantra_%28CN7%29_1.6_MPI_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2021_Hyundai_Elantra_%28CN7%29_1.6_MPI_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Kona':          'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/2021_Hyundai_Kona_%28OS%2C_facelift%29_1.0_T-GDi_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2021_Hyundai_Kona_%28OS%2C_facelift%29_1.0_T-GDi_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Kona Electric': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/2021_Hyundai_Kona_%28OS%2C_facelift%29_1.0_T-GDi_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2021_Hyundai_Kona_%28OS%2C_facelift%29_1.0_T-GDi_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Palisade':      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/2020_Hyundai_Palisade_%28LX2%29_3.8_GDi_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2020_Hyundai_Palisade_%28LX2%29_3.8_GDi_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Staria':        'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/2021_Hyundai_Staria_%28US4%29_3.5_GDi_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2021_Hyundai_Staria_%28US4%29_3.5_GDi_%28South_Korea%29%2C_front_8.28.22.jpg',
-  'Venue':         'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/2020_Hyundai_Venue_%28QX%29_1.0_T-GDi_%28South_Korea%29%2C_front_8.28.22.jpg/1280px-2020_Hyundai_Venue_%28QX%29_1.0_T-GDi_%28South_Korea%29%2C_front_8.28.22.jpg',
+  'IONIQ 6':       'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&q=80',
+  'IONIQ 5':       'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80',
+  'Tucson':        'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80',
+  'Santa Fe':      'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&q=80',
+  'Sonata':        'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80',
+  'Elantra':       'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&q=80',
+  'Kona':          'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80',
+  'Kona Electric': 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80',
+  'Palisade':      'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80',
+  'Staria':        'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&q=80',
+  'Venue':         'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80',
 };
 
+const FALLBACK = 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&q=80';
+
 // Fallback placeholder with car silhouette
-const FALLBACK = 'https://placehold.co/400x220/002C5F/FFFFFF?text=Hyundai';
+// Fallback already defined above with MODEL_IMAGES
 
 const statusConfig = {
   AVAILABLE:  { label: 'Available',  color: '#10b981', bg: '#d1fae5' },
@@ -47,19 +49,34 @@ function VehicleCard({ vehicle, onTestDrive, onEnquiry }) {
 
   return (
     <Card sx={{
-      height: '100%', display: 'flex', flexDirection: 'column',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
       transition: 'transform 0.2s, box-shadow 0.2s',
       '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 40px rgba(0,44,95,0.12)' },
     }}>
-      {/* Image */}
-      <Box sx={{ position: 'relative' }}>
-        <CardMedia
+      {/* Image with fixed 16:9 aspect ratio — always same height regardless of image */}
+      <Box sx={{
+        position: 'relative',
+        width: '100%',
+        paddingTop: '56.25%', // 16:9
+        overflow: 'hidden',
+        bgcolor: '#f1f5f9',
+        flexShrink: 0,        // never shrink the image area
+      }}>
+        <Box
           component="img"
-          height="200"
-          image={imgSrc}
+          src={imgSrc}
           alt={vehicle.model}
           onError={() => setImgError(true)}
-          sx={{ objectFit: 'cover', bgcolor: '#f8fafc' }}
+          sx={{
+            position: 'absolute',
+            top: 0, left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
         />
         {/* Status badge */}
         <Box sx={{
@@ -82,7 +99,7 @@ function VehicleCard({ vehicle, onTestDrive, onEnquiry }) {
         </Box>
       </Box>
 
-      <CardContent sx={{ flex: 1, p: 2 }}>
+      <CardContent sx={{ flex: 1, p: 2, display: 'flex', flexDirection: 'column' }}>
         {/* Title */}
         <Typography variant="h6" fontWeight={800} color="text.primary" lineHeight={1.2}>
           {vehicle.model}
@@ -167,7 +184,10 @@ function VehicleCard({ vehicle, onTestDrive, onEnquiry }) {
 function CardSkeleton() {
   return (
     <Card>
-      <Skeleton variant="rectangular" height={200} />
+      {/* 16:9 aspect ratio skeleton */}
+      <Box sx={{ width: '100%', paddingTop: '56.25%', position: 'relative' }}>
+        <Skeleton variant="rectangular" sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+      </Box>
       <CardContent>
         <Skeleton width="60%" height={28} />
         <Skeleton width="40%" height={20} sx={{ mt: 0.5 }} />
@@ -262,7 +282,7 @@ export default function ShowroomPage() {
       </Box>
 
       {/* Vehicle Grid */}
-      <Grid container spacing={2.5}>
+      <Grid container spacing={2.5} alignItems="stretch">
         {isLoading
           ? Array.from({ length: 8 }).map((_, i) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={i}><CardSkeleton /></Grid>

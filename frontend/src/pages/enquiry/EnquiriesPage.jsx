@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, IconButton, Tooltip, MenuItem, TextField } from '@mui/material';
 import { Edit, Close } from '@mui/icons-material';
@@ -10,15 +10,14 @@ import EnquiryFormDialog from './EnquiryFormDialog';
 import { enquiryApi } from '../../api/enquiryApi';
 import { useNotify } from '../../hooks/useNotify';
 import { useApiError } from '../../hooks/useApiError';
-
 import { useAuthStore } from '../../store/authStore';
+import { formatDateTime } from '../../utils/dateUtils';
 
 const statusColors = { NEW: 'info', IN_PROGRESS: 'warning', RESOLVED: 'success', CLOSED: 'default' };
 const typeColors = { PURCHASE: 'primary', TEST_DRIVE: 'secondary', FINANCING: 'warning', SERVICE: 'info', GENERAL: 'default' };
 
 export default function EnquiriesPage() {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -32,18 +31,25 @@ export default function EnquiriesPage() {
   const isEmployee = hasRole('EMPLOYEE') && !hasRole('ADMIN') && !hasRole('DEALER');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['enquiries', page, pageSize, search, statusFilter, typeFilter],
+    queryKey: ['enquiries', paginationModel.page, paginationModel.pageSize, search, statusFilter, typeFilter],
     queryFn: () => enquiryApi.getAll({
-      page, size: pageSize, search,
+      page: paginationModel.page,
+      size: paginationModel.pageSize,
+      search,
       status: statusFilter || undefined,
       type: typeFilter || undefined,
     }),
     select: (res) => res.data.data,
+    placeholderData: keepPreviousData,
   });
 
   const closeMutation = useMutation({
     mutationFn: (id) => enquiryApi.delete(id),
-    onSuccess: () => { notify.success('Enquiry closed'); queryClient.invalidateQueries(['enquiries']); setCloseId(null); },
+    onSuccess: () => {
+      notify.success('Enquiry closed');
+      queryClient.invalidateQueries({ queryKey: ['enquiries'] });
+      setCloseId(null);
+    },
     onError: handleError,
   });
 
@@ -60,7 +66,7 @@ export default function EnquiriesPage() {
       field: 'status', headerName: 'Status', width: 120,
       renderCell: ({ value }) => <Chip label={value?.replace('_', ' ')} size="small" color={statusColors[value] || 'default'} />,
     },
-    { field: 'createdAt', headerName: 'Received', width: 160, valueFormatter: ({ value }) => value ? new Date(value).toLocaleString() : '-' },
+    { field: 'createdAt', headerName: 'Received', width: 160, valueFormatter: (value) => formatDateTime(value) },
     {
       field: 'actions', headerName: 'Actions', width: 100, sortable: false,
       renderCell: ({ row }) => (
@@ -92,9 +98,11 @@ export default function EnquiriesPage() {
       />
 
       <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-        <SearchBar placeholder="Search by customer, phone, vehicle, dealer..." onSearch={(v) => { setSearch(v); setPage(0); }} />
+        <SearchBar placeholder="Search by customer, phone, vehicle, dealer..."
+          onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
         <TextField select size="small" label="Status" value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }} sx={{ minWidth: 140 }}>
+          onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
+          sx={{ minWidth: 140 }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="NEW">New</MenuItem>
           <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
@@ -102,7 +110,8 @@ export default function EnquiriesPage() {
           <MenuItem value="CLOSED">Closed</MenuItem>
         </TextField>
         <TextField select size="small" label="Type" value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value); setPage(0); }} sx={{ minWidth: 140 }}>
+          onChange={(e) => { setTypeFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
+          sx={{ minWidth: 140 }}>
           <MenuItem value="">All Types</MenuItem>
           <MenuItem value="PURCHASE">Purchase</MenuItem>
           <MenuItem value="TEST_DRIVE">Test Drive</MenuItem>
@@ -115,11 +124,11 @@ export default function EnquiriesPage() {
       <DataGrid
         rows={data?.content || []}
         columns={columns}
-        rowCount={data?.totalElements || 0}
+        rowCount={data?.totalElements ?? 0}
         loading={isLoading}
         paginationMode="server"
-        paginationModel={{ page, pageSize }}
-        onPaginationModelChange={({ page: p, pageSize: ps }) => { setPage(p); setPageSize(ps); }}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
         pageSizeOptions={[5, 10, 25, 50]}
         autoHeight
         disableRowSelectionOnClick

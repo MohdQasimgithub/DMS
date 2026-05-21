@@ -6,12 +6,14 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Grid, MenuItem, Checkbox, ListItemText,
   Select, InputLabel, FormControl, CircularProgress, FormHelperText,
+  Alert,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../../api/userApi';
 import { roleApi } from '../../api/roleApi';
 import { useNotify } from '../../hooks/useNotify';
 import { useApiError } from '../../hooks/useApiError';
+import { useAuthStore } from '../../store/authStore';
 
 const schema = yup.object({
   username: yup.string().required('Username is required').min(3).max(50),
@@ -31,6 +33,10 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
   const notify = useNotify();
   const { handleError } = useApiError();
   const isEdit = !!editData;
+  const { user } = useAuthStore();
+
+  // Admin editing their own account — role field should be locked
+  const isSelfEdit = isEdit && editData?.username === user?.username;
 
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
@@ -40,10 +46,14 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
   const { data: roles } = useQuery({
     queryKey: ['roles-active'],
     queryFn: () => roleApi.getAllActive(),
-    // Dealer can only assign EMPLOYEE role
-    select: (res) => isDealer
-      ? res.data.data.filter(r => r.roleName === 'EMPLOYEE')
-      : res.data.data,
+    select: (res) => {
+      let list = res.data.data;
+      // ADMIN role never shown in create/edit dropdown — only one admin allowed
+      list = list.filter(r => r.roleName !== 'ADMIN');
+      // Dealer can only assign EMPLOYEE
+      if (isDealer) list = list.filter(r => r.roleName === 'EMPLOYEE');
+      return list;
+    },
     enabled: open,
   });
 
@@ -72,6 +82,11 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
       <DialogTitle>{isEdit ? 'Edit User' : 'Create User'}</DialogTitle>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
         <DialogContent>
+          {isSelfEdit && (
+            <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+              You are editing your own account. Your role cannot be changed.
+            </Alert>
+          )}
           <Grid container spacing={2} mt={0.5}>
             <Grid item xs={12} sm={6}>
               <TextField {...register('username')} label="Username *" fullWidth
@@ -92,7 +107,7 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
               <TextField {...register('phoneNumber')} label="Phone" fullWidth />
             </Grid>
             <Grid item xs={12}>
-              <FormControl fullWidth error={!!errors.roleIds}>
+              <FormControl fullWidth error={!!errors.roleIds} disabled={isSelfEdit}>
                 <InputLabel>Roles</InputLabel>
                 <Controller name="roleIds" control={control} render={({ field }) => (
                   <Select {...field} multiple label="Roles"
@@ -107,6 +122,11 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
                     ))}
                   </Select>
                 )} />
+                {isSelfEdit && (
+                  <FormHelperText sx={{ color: 'warning.main' }}>
+                    You cannot change your own role
+                  </FormHelperText>
+                )}
                 {errors.roleIds && <FormHelperText>{errors.roleIds.message}</FormHelperText>}
               </FormControl>
             </Grid>

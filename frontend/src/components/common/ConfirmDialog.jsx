@@ -1,10 +1,15 @@
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Box } from '@mui/material';
 import { WarningAmber } from '@mui/icons-material';
 
+// ============================================
+// ConfirmDialog - Reusable confirmation dialog
+// ============================================
+// Used for delete confirmations and other destructive actions
 export default function ConfirmDialog({ open, title, message, onConfirm, onCancel }) {
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth
       PaperProps={{ sx: { borderRadius: 3, p: 0.5 } }}>
+      {/* Title with warning icon */}
       <DialogTitle sx={{ pb: 1 }}>
         <Box display="flex" alignItems="center" gap={1.5}>
           <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -13,11 +18,15 @@ export default function ConfirmDialog({ open, title, message, onConfirm, onCance
           {title || 'Confirm Action'}
         </Box>
       </DialogTitle>
+      
+      {/* Message text */}
       <DialogContent sx={{ pt: 0 }}>
         <DialogContentText sx={{ fontSize: '0.9rem', color: '#64748b' }}>
           {message || 'Are you sure you want to proceed? This action cannot be undone.'}
         </DialogContentText>
       </DialogContent>
+      
+      {/* Action buttons */}
       <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
         <Button onClick={onCancel} variant="outlined" sx={{ borderColor: '#e2e8f0', color: '#64748b', '&:hover': { borderColor: '#94a3b8', bgcolor: '#f8fafc' } }}>
           Cancel

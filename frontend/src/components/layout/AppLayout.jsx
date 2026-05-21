@@ -1,3 +1,9 @@
+// ============================================================================
+// APP LAYOUT - Main application layout with sidebar navigation
+// ============================================================================
+// Features: Responsive drawer, role-based menu, user profile, nested routes
+// ============================================================================
+
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -16,15 +22,18 @@ import { useAuthStore } from '../../store/authStore';
 
 const DRAWER_WIDTH = 256;
 
+// Navigation menu structure with role-based access
 const navItems = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
   { label: 'Showroom', icon: <Storefront />, path: '/showroom' },
-  { label: 'Dealers', icon: <Store />, path: '/dealers', roles: ['ADMIN', 'DEALER'] },
+  // Only ADMIN sees the Dealers list
+  { label: 'Dealers', icon: <Store />, path: '/dealers', roles: ['ADMIN'] },
   { label: 'Vehicles', icon: <DirectionsCar />, path: '/vehicles', roles: ['ADMIN', 'DEALER'] },
-  // All roles can access Test Drives and Enquiries (but see filtered data)
+  // All roles can access Test Drives and Enquiries (filtered by backend)
   { label: 'Test Drives', icon: <DriveEta />, path: '/test-drives', roles: ['ADMIN', 'DEALER', 'EMPLOYEE'] },
   { label: 'Enquiries', icon: <ContactMail />, path: '/enquiries', roles: ['ADMIN', 'DEALER', 'EMPLOYEE'] },
   {
+    // Admin section with nested menu
     label: 'Administration', icon: <AdminPanelSettings />, roles: ['ADMIN'],
     children: [
       { label: 'Users', icon: <People />, path: '/admin/users' },
@@ -34,23 +43,34 @@ const navItems = [
       { label: 'Login History', icon: <History />, path: '/admin/login-history' },
     ],
   },
-  // Dealer gets a limited management section — only user creation
+  // Dealer gets limited management - only user creation
   { label: 'Manage Employees', icon: <People />, path: '/admin/users', roles: ['DEALER'] },
 ];
 
+// Role badge colors
 const roleColors = { ADMIN: '#ef4444', DEALER: '#3b82f6', EMPLOYEE: '#10b981' };
 
 export default function AppLayout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
+  // Local state
+  const [mobileOpen, setMobileOpen] = useState(false);  // Mobile drawer toggle
+  const [adminOpen, setAdminOpen] = useState(false);    // Admin submenu toggle
+  const [anchorEl, setAnchorEl] = useState(null);       // User menu anchor
+  
+  // Global state and navigation
   const { user, logout, hasRole } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  // Logout handler
+  const handleLogout = () => { 
+    logout(); 
+    navigate('/login'); 
+  };
 
+  // Check if current path is active
   const isActive = (path) => location.pathname === path;
+  
+  // Check if any admin submenu item is active
   const isAdminActive = navItems.find(i => i.children)?.children?.some(c => isActive(c.path));
 
   const drawer = (

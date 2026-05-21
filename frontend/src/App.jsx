@@ -1,3 +1,7 @@
+// ============================================================================
+// ROOT APP COMPONENT - Main entry point with routing and theme configuration
+// ============================================================================
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -5,8 +9,11 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Layout & Routing
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './router/ProtectedRoute';
+
+// Pages
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DealersPage from './pages/dealers/DealersPage';
@@ -20,20 +27,30 @@ import MenusPage from './pages/admin/MenusPage';
 import ConfigsPage from './pages/admin/ConfigsPage';
 import LoginHistoryPage from './pages/admin/LoginHistoryPage';
 
+// React Query client - handles server state management with caching
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 30000 },
+    queries: { 
+      retry: 1,           // Retry failed requests once
+      staleTime: 30000,   // Data fresh for 30 seconds
+    },
   },
 });
 
+// ============================================================================
+// MATERIAL-UI THEME - Hyundai brand colors and component customization
+// ============================================================================
 const theme = createTheme({
   palette: {
+    // Hyundai brand colors
     primary:   { main: '#002C5F', light: '#1a4a7a', dark: '#001a3a', contrastText: '#fff' },
     secondary: { main: '#00AAD2', light: '#33bbdb', dark: '#007a99', contrastText: '#fff' },
+    // Status colors
     success:   { main: '#10b981', light: '#d1fae5', dark: '#059669' },
     warning:   { main: '#f59e0b', light: '#fef3c7', dark: '#d97706' },
     error:     { main: '#ef4444', light: '#fee2e2', dark: '#dc2626' },
     info:      { main: '#3b82f6', light: '#dbeafe', dark: '#2563eb' },
+    // Background and text
     background:{ default: '#f0f2f5', paper: '#ffffff' },
     text:      { primary: '#1e293b', secondary: '#64748b' },
     divider:   '#e2e8f0',
@@ -143,29 +160,45 @@ const theme = createTheme({
 
 export default function App() {
   return (
+    // React Query Provider - enables data fetching and caching throughout app
     <QueryClientProvider client={queryClient}>
+      {/* Material-UI Theme Provider - applies Hyundai branding */}
       <ThemeProvider theme={theme}>
-        <CssBaseline />
+        <CssBaseline /> {/* Normalize CSS across browsers */}
+        
+        {/* React Router - handles client-side navigation */}
         <BrowserRouter>
           <Routes>
+            {/* Public route - no authentication required */}
             <Route path="/login" element={<LoginPage />} />
+            
+            {/* Protected routes - require authentication */}
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              {/* Redirect root to dashboard */}
               <Route index element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Main application routes */}
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="dealers" element={<DealersPage />} />
               <Route path="vehicles" element={<VehiclesPage />} />
               <Route path="showroom" element={<ShowroomPage />} />
               <Route path="test-drives" element={<TestDrivesPage />} />
               <Route path="enquiries" element={<EnquiriesPage />} />
+              
+              {/* Admin routes - role-based access control */}
               <Route path="admin/users" element={<ProtectedRoute requiredRoles={['ADMIN', 'DEALER']}><UsersPage /></ProtectedRoute>} />
-              <Route path="admin/roles" element={<ProtectedRoute requiredRole="ADMIN"><RolesPage /></ProtectedRoute>} />
-              <Route path="admin/menus" element={<ProtectedRoute requiredRole="ADMIN"><MenusPage /></ProtectedRoute>} />
-              <Route path="admin/configs" element={<ProtectedRoute requiredRole="ADMIN"><ConfigsPage /></ProtectedRoute>} />
-              <Route path="admin/login-history" element={<ProtectedRoute requiredRole="ADMIN"><LoginHistoryPage /></ProtectedRoute>} />
+              <Route path="admin/roles" element={<ProtectedRoute requiredRoles={['ADMIN']}><RolesPage /></ProtectedRoute>} />
+              <Route path="admin/menus" element={<ProtectedRoute requiredRoles={['ADMIN']}><MenusPage /></ProtectedRoute>} />
+              <Route path="admin/configs" element={<ProtectedRoute requiredRoles={['ADMIN']}><ConfigsPage /></ProtectedRoute>} />
+              <Route path="admin/login-history" element={<ProtectedRoute requiredRoles={['ADMIN']}><LoginHistoryPage /></ProtectedRoute>} />
             </Route>
+            
+            {/* Catch-all route - redirect unknown paths to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
+        
+        {/* Toast notifications - global success/error messages */}
         <ToastContainer
           position="top-right"
           autoClose={3000}

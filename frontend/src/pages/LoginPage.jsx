@@ -1,3 +1,9 @@
+// ============================================================================
+// LOGIN PAGE - User authentication with form validation
+// ============================================================================
+// Features: Yup validation, error handling, auto-redirect after login
+// ============================================================================
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -11,29 +17,47 @@ import { Visibility, VisibilityOff, DirectionsCar } from '@mui/icons-material';
 import { authApi } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 
+// Validation schema using Yup
 const schema = yup.object({
   username: yup.string().required('Username is required'),
   password: yup.string().required('Password is required'),
 });
 
 export default function LoginPage() {
+  // Local state
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Global state and navigation
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
+  // React Hook Form with Yup validation
+  const { register, handleSubmit, formState: { errors } } = useForm({ 
+    resolver: yupResolver(schema) 
+  });
 
+  // Form submission handler
   const onSubmit = async (data) => {
-    setLoading(true); setError('');
+    setLoading(true); 
+    setError('');
+    
     try {
+      // Call login API
       const res = await authApi.login(data);
+      
+      // Save auth data to Zustand store
       setAuth(res.data.data);
+      
+      // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
+      // Show error message
       setError(err?.response?.data?.message || 'Login failed. Please try again.');
-    } finally { setLoading(false); }
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   return (

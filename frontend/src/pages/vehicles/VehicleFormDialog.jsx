@@ -12,6 +12,12 @@ import { dealerApi } from '../../api/dealerApi';
 import { useNotify } from '../../hooks/useNotify';
 import { useApiError } from '../../hooks/useApiError';
 
+// ============================================
+// VehicleFormDialog - Create/Edit vehicle form
+// ============================================
+// Features: Linked dropdowns (Model → Variant → Color), validation, edit mode
+
+// Validation schema using Yup
 const schema = yup.object({
   vin: yup.string().required('VIN is required').length(17, 'VIN must be 17 characters'),
   model: yup.string().required('Model is required'),
@@ -29,19 +35,28 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
   const { handleError } = useApiError();
   const isEdit = !!editData;
 
+  // ============================================
+  // Form Setup with React Hook Form + Yup
+  // ============================================
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: { status: 'AVAILABLE' },
   });
 
+  // Watch fields for linked dropdowns
   const watchModel = watch('model');
   const watchVariant = watch('variant');
 
+  // Reset form when dialog opens/closes or editData changes
   useEffect(() => {
     if (open) reset(editData || { status: 'AVAILABLE' });
   }, [open, editData]);
 
-  // Linked dropdowns
+  // ============================================
+  // Linked Dropdowns - Model → Variant → Color
+  // ============================================
+  
+  // Fetch all unique models
   const { data: models } = useQuery({
     queryKey: ['vehicle-models'],
     queryFn: () => vehicleApi.getModels(),
@@ -49,6 +64,7 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
     enabled: open,
   });
 
+  // Fetch variants based on selected model
   const { data: variants } = useQuery({
     queryKey: ['vehicle-variants', watchModel],
     queryFn: () => vehicleApi.getVariants(watchModel),
@@ -56,6 +72,7 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
     enabled: !!watchModel,
   });
 
+  // Fetch colors based on selected model + variant
   const { data: colors } = useQuery({
     queryKey: ['vehicle-colors', watchModel, watchVariant],
     queryFn: () => vehicleApi.getColors(watchModel, watchVariant),
@@ -63,6 +80,7 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
     enabled: !!watchModel && !!watchVariant,
   });
 
+  // Fetch all dealers for dropdown
   const { data: dealers } = useQuery({
     queryKey: ['dealers-all'],
     queryFn: () => dealerApi.getAll({ size: 100 }),
@@ -70,26 +88,34 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
     enabled: open,
   });
 
+  // ============================================
+  // Create/Update Mutation
+  // ============================================
   const mutation = useMutation({
     mutationFn: (data) => isEdit ? vehicleApi.update(editData.id, data) : vehicleApi.create(data),
     onSuccess: () => {
       notify.success(`Vehicle ${isEdit ? 'updated' : 'created'}`);
-      queryClient.invalidateQueries(['vehicles']);
+      queryClient.invalidateQueries(['vehicles']); // Refresh vehicle list
       onClose();
     },
     onError: handleError,
   });
 
+  // ============================================
+  // Render Form
+  // ============================================
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{isEdit ? 'Edit Vehicle' : 'Add Vehicle'}</DialogTitle>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))}>
         <DialogContent>
           <Grid container spacing={2} mt={0.5}>
+            {/* VIN - 17 character unique identifier */}
             <Grid item xs={12}>
               <TextField {...register('vin')} label="VIN *" fullWidth
                 error={!!errors.vin} helperText={errors.vin?.message} />
             </Grid>
+            
             {/* Linked dropdowns: Model → Variant → Color */}
             <Grid item xs={12} sm={4}>
               <Controller name="model" control={control} render={({ field }) => (
@@ -113,6 +139,8 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
                 </TextField>
               )} />
             </Grid>
+            
+            {/* Additional fields */}
             <Grid item xs={12} sm={4}>
               <TextField {...register('modelYear')} label="Model Year" type="number" fullWidth />
             </Grid>
@@ -128,6 +156,8 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
                 </TextField>
               )} />
             </Grid>
+            
+            {/* Dealer dropdown */}
             <Grid item xs={12}>
               <Controller name="dealerId" control={control} render={({ field }) => (
                 <TextField {...field} select label="Dealer" fullWidth>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, MenuItem, TextField, Typography, Paper } from '@mui/material';
 import { CheckCircle, Cancel, Lock } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import SearchBar from '../../components/common/SearchBar';
 import { loginHistoryApi } from '../../api/loginHistoryApi';
+import { formatDateTime } from '../../utils/dateUtils';
 
 const statusConfig = {
   SUCCESS: { color: 'success', icon: <CheckCircle sx={{ fontSize: 14 }} />, bg: '#d1fae5', text: '#059669' },
@@ -16,23 +17,25 @@ const statusConfig = {
 const roleColors = { ADMIN: '#ef4444', DEALER: '#3b82f6', EMPLOYEE: '#10b981' };
 
 export default function LoginHistoryPage() {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['login-history', page, pageSize, search, statusFilter],
-    queryFn: () => loginHistoryApi.getAll({ page, size: pageSize, search, status: statusFilter || undefined }),
+    queryKey: ['login-history', paginationModel.page, paginationModel.pageSize, search, statusFilter],
+    queryFn: () => loginHistoryApi.getAll({
+      page: paginationModel.page,
+      size: paginationModel.pageSize,
+      search,
+      status: statusFilter || undefined,
+    }),
     select: (res) => res.data.data,
+    placeholderData: keepPreviousData,
     refetchInterval: 30000,
   });
 
   const columns = [
-    {
-      field: 'loginTime', headerName: 'Date & Time', width: 180,
-      valueFormatter: ({ value }) => value ? new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '-',
-    },
+    { field: 'loginTime', headerName: 'Date & Time', width: 180, valueFormatter: (value) => formatDateTime(value) },
     {
       field: 'username', headerName: 'Username', width: 150,
       renderCell: ({ value }) => (
@@ -105,9 +108,11 @@ export default function LoginHistoryPage() {
 
       {/* Filters */}
       <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-        <SearchBar placeholder="Search by username or role..." onSearch={(v) => { setSearch(v); setPage(0); }} />
+        <SearchBar placeholder="Search by username or role..."
+          onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
         <TextField select size="small" label="Status" value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }} sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}>
+          onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
+          sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="SUCCESS">Success</MenuItem>
           <MenuItem value="FAILED">Failed</MenuItem>
@@ -119,11 +124,11 @@ export default function LoginHistoryPage() {
         <DataGrid
           rows={data?.content || []}
           columns={columns}
-          rowCount={data?.totalElements || 0}
+          rowCount={data?.totalElements ?? 0}
           loading={isLoading}
           paginationMode="server"
-          paginationModel={{ page, pageSize }}
-          onPaginationModelChange={({ page: p, pageSize: ps }) => { setPage(p); setPageSize(ps); }}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[10, 20, 50]}
           autoHeight
           disableRowSelectionOnClick
