@@ -27,8 +27,8 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get all users with pagination and search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER')")
+    @Operation(summary = "Get all users — ADMIN sees all, DEALER sees only their employees")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAll(
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "0") int page,

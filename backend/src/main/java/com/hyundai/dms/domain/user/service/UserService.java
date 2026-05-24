@@ -41,7 +41,17 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAll(String search, Pageable pageable) {
-        return PageResponse.of(userRepository.search(search, pageable).map(this::toResponse));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+
+        Long dealerId = null;
+        if (isDealer && !isAdmin) {
+            // Use direct JPQL to get dealer_id — avoids any caching/lazy-load issues
+            dealerId = userRepository.findDealerIdByUsername(auth.getName());
+            log.debug("Dealer '{}' filtering users by dealerId={}", auth.getName(), dealerId);
+        }
+        return PageResponse.of(userRepository.search(search, dealerId, pageable).map(this::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -55,27 +65,37 @@ public class UserService {
         boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
 
-        // ── Role hierarchy enforcement ────────────────────────────────────────
-        if (isDealer && !isAdmin) {
-            // Dealer can only create EMPLOYEE accounts
-            if (request.getRoleIds() != null) {
-                for (Long roleId : request.getRoleIds()) {
-                    Role role = roleRepository.findById(roleId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
-                    if (!role.getRoleName().equals("EMPLOYEE")) {
-                        throw new BusinessException("Dealers can only create Employee accounts.");
-                    }
+        // ── Role hierarchy enforcement ─────────────────────────────────────────
+        // Rule 1: ADMIN can create DEALER or EMPLOYEE — but NOT another ADMIN
+        // Rule 2: DEALER can only create EMPLOYEE
+        // Rule 3: EMPLOYEE cannot create anyone (blocked at controller level)
+        if (request.getRoleIds() != null) {
+            for (Long roleId : request.getRoleIds()) {
+                Role role = roleRepository.findById(roleId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
+                if (role.getRoleName().equals("ADMIN")) {
+                    throw new BusinessException("ADMIN role cannot be assigned to new users. There can only be one Admin.");
                 }
-            }
-            // Auto-assign the dealer's own dealerId to the employee they create
-            if (request.getDealerId() == null) {
-                User dealerUser = userRepository.findByUsername(auth.getName())
-                        .orElseThrow(() -> new BusinessException("Dealer user not found"));
-                if (dealerUser.getDealer() != null) {
-                    request.setDealerId(dealerUser.getDealer().getId());
+                if (isDealer && !isAdmin && !role.getRoleName().equals("EMPLOYEE")) {
+                    throw new BusinessException("Dealers can only create Employee accounts.");
                 }
             }
         }
+
+        // Auto-assign dealer's own dealerId when dealer creates an employee
+        if (isDealer && !isAdmin && request.getDealerId() == null) {
+            // Use a direct query to get dealer_id — avoids lazy loading issues
+            userRepository.findByUsername(auth.getName()).ifPresent(dealerUser -> {
+                if (dealerUser.getDealer() != null) {
+                    request.setDealerId(dealerUser.getDealer().getId());
+                    log.debug("Auto-assigned dealerId {} to new employee from dealer {}",
+                            dealerUser.getDealer().getId(), auth.getName());
+                } else {
+                    log.warn("Dealer user '{}' has no linked dealer — employee will have no dealer_id", auth.getName());
+                }
+            });
+        }
+        // ──────────────────────────────────────────────────────────────────────
 
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateResourceException("Username already exists: " + request.getUsername());
@@ -114,6 +134,47 @@ public class UserService {
     public UserResponse update(Long id, UserRequest request) {
         User user = findById(id);
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isSelf   = auth.getName().equals(user.getUsername());
+        boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+
+        // Dealer can only update employees that belong to their own dealership
+        if (isDealer && !isAdmin && !isSelf) {
+            User dealerUser = userRepository.findByUsername(auth.getName())
+                    .orElseThrow(() -> new BusinessException("Dealer user not found"));
+            boolean isMyEmployee = user.getDealer() != null
+                    && dealerUser.getDealer() != null
+                    && user.getDealer().getId().equals(dealerUser.getDealer().getId());
+            if (!isMyEmployee) {
+                throw new BusinessException("You can only update employees under your dealership.");
+            }
+        }
+
+        if (request.getRoleIds() != null) {
+            for (Long roleId : request.getRoleIds()) {
+                Role role = roleRepository.findById(roleId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
+
+                // Rule: ADMIN role can never be assigned to anyone via update
+                if (role.getRoleName().equals("ADMIN") && !isSelf) {
+                    throw new BusinessException("ADMIN role cannot be assigned to other users.");
+                }
+                // Rule: Admin cannot remove their own ADMIN role
+                if (isSelf && isAdmin && !role.getRoleName().equals("ADMIN")) {
+                    throw new BusinessException("Admin cannot change their own role.");
+                }
+            }
+            // Rule: If admin is editing themselves, ADMIN role must stay
+            if (isSelf && isAdmin) {
+                boolean keepingAdmin = request.getRoleIds().stream().anyMatch(rid ->
+                        roleRepository.findById(rid).map(r -> r.getRoleName().equals("ADMIN")).orElse(false));
+                if (!keepingAdmin) {
+                    throw new BusinessException("Admin cannot remove their own ADMIN role.");
+                }
+            }
+        }
+
         if (!user.getUsername().equals(request.getUsername()) &&
                 userRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateResourceException("Username already exists: " + request.getUsername());
@@ -144,6 +205,16 @@ public class UserService {
     @Transactional
     public void delete(Long id) {
         User user = findById(id);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+        if (isDealer && !isAdmin) {
+            User dealerUser = userRepository.findByUsername(auth.getName()).orElse(null);
+            boolean isMyEmployee = dealerUser != null && dealerUser.getDealer() != null
+                    && user.getDealer() != null
+                    && user.getDealer().getId().equals(dealerUser.getDealer().getId());
+            if (!isMyEmployee) throw new BusinessException("You can only deactivate your own employees.");
+        }
         user.setActive(false);
         userRepository.save(user);
         log.info("Deactivated user: {}", user.getUsername());

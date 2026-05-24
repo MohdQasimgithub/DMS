@@ -18,14 +18,30 @@ public interface UserRepository extends JpaRepository<User, Long>, QuerydslPredi
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 
+    /**
+     * ADMIN  → dealerId = null → sees all users
+     * DEALER → dealerId = X   → sees only EMPLOYEE users linked to their dealer
+     *
+     * Uses LEFT JOIN so users with NULL dealer_id are included when dealerId param is null.
+     * When dealerId is provided, only EMPLOYEE role users with that dealer_id are returned.
+     */
     @Query("""
-        SELECT u FROM User u
+        SELECT DISTINCT u FROM User u LEFT JOIN u.dealer d LEFT JOIN u.roles r
         WHERE (:search IS NULL OR :search = '' OR
                LOWER(u.username) LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(u.fullName) LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(u.email)    LIKE LOWER(CONCAT('%',:search,'%')))
+          AND (:dealerId IS NULL OR (d.id = :dealerId AND r.roleName = 'EMPLOYEE'))
         """)
-    Page<User> search(@Param("search") String search, Pageable pageable);
+    Page<User> search(@Param("search") String search,
+                      @Param("dealerId") Long dealerId,
+                      Pageable pageable);
+
+    /**
+     * Native query to get dealer_id directly from DB — no lazy loading, no JPQL join issues.
+     */
+    @Query(value = "SELECT dealer_id FROM users WHERE username = :username", nativeQuery = true)
+    Long findDealerIdByUsername(@Param("username") String username);
 
     @Modifying
     @Query("UPDATE User u SET u.failedLoginAttempts = u.failedLoginAttempts + 1 WHERE u.username = :username")

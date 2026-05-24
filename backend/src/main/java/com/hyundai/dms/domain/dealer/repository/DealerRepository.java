@@ -32,9 +32,11 @@ public interface DealerRepository extends JpaRepository<Dealer, Long>, QuerydslP
                LOWER(d.managerName) LIKE LOWER(CONCAT('%',:search,'%')))
           AND (:statusStr IS NULL OR :statusStr = '' OR CAST(d.status AS string) = :statusStr)
           AND (:showAll = true OR d.status <> 'INACTIVE')
+          AND (:dealerId IS NULL OR d.id = :dealerId)
         """)
     Page<Dealer> search(@Param("search") String search,
                         @Param("statusStr") String statusStr,
                         @Param("showAll") boolean showAll,
+                        @Param("dealerId") Long dealerId,
                         Pageable pageable);
 }

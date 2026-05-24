@@ -2,6 +2,7 @@ package com.hyundai.dms.domain.dealer.service;
 
 import com.hyundai.dms.domain.auditlog.entity.AuditLog;
 import com.hyundai.dms.domain.auditlog.service.AuditLogService;
+import com.hyundai.dms.common.exception.BusinessException;
 import com.hyundai.dms.common.exception.DuplicateResourceException;
 import com.hyundai.dms.common.exception.ResourceNotFoundException;
 import com.hyundai.dms.common.response.PageResponse;
@@ -9,8 +10,11 @@ import com.hyundai.dms.domain.dealer.dto.DealerRequest;
 import com.hyundai.dms.domain.dealer.dto.DealerResponse;
 import com.hyundai.dms.domain.dealer.entity.Dealer;
 import com.hyundai.dms.domain.dealer.repository.DealerRepository;
+import com.hyundai.dms.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
 public class DealerService {
 
     private final DealerRepository dealerRepository;
+    private final UserRepository userRepository;
     private final AuditLogService auditLogService;
 
     /**
@@ -33,9 +38,26 @@ public class DealerService {
     @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public PageResponse<DealerResponse> getAll(String search, Dealer.DealerStatus status, Pageable pageable) {
         String statusStr = status != null ? status.name() : null;
-        // showAll=true only when admin explicitly filters by a status (including INACTIVE)
-        boolean showAll = statusStr != null && !statusStr.isEmpty();
-        return PageResponse.of(dealerRepository.search(search, statusStr, showAll, pageable).map(this::toResponse));
+        boolean showAll  = statusStr != null && !statusStr.isEmpty();
+
+        // Dealer sees only their own dealership record
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+
+        Long dealerId = null;
+        if (isDealer && !isAdmin) {
+            userRepository.findByUsername(auth.getName()).ifPresent(u -> {
+                // dealerId will be set below
+            });
+            var dealerUser = userRepository.findByUsername(auth.getName()).orElse(null);
+            if (dealerUser != null && dealerUser.getDealer() != null) {
+                dealerId = dealerUser.getDealer().getId();
+            }
+        }
+
+        final Long finalDealerId = dealerId;
+        return PageResponse.of(dealerRepository.search(search, statusStr, showAll, finalDealerId, pageable).map(this::toResponse));
     }
 
     /**

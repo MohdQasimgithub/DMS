@@ -60,7 +60,7 @@ public class User extends BaseEntity {
     private LocalDateTime accountExpiredAt;
 
     // Which dealer this user belongs to (set for DEALER and EMPLOYEE roles)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "dealer_id")
     private Dealer dealer;
 
