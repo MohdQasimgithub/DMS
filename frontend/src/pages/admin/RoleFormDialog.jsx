@@ -43,7 +43,7 @@ export default function RoleFormDialog({ open, onClose, editData }) {
         menuIds: editData.menus?.map((m) => m.id) || [],
       } : { menuIds: [] });
     }
-  }, [open, editData]);
+  }, [open, editData, isEdit, reset]);
 
   const mutation = useMutation({
     mutationFn: (data) => isEdit ? roleApi.update(editData.id, data) : roleApi.create(data),

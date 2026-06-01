@@ -19,11 +19,12 @@ public interface UserRepository extends JpaRepository<User, Long>, QuerydslPredi
     boolean existsByEmail(String email);
 
     /**
-     * ADMIN  → dealerId = null → sees all users
+     * ADMIN  → dealerId = null → sees all users EXCEPT other admins
      * DEALER → dealerId = X   → sees only EMPLOYEE users linked to their dealer
      *
      * Uses LEFT JOIN so users with NULL dealer_id are included when dealerId param is null.
      * When dealerId is provided, only EMPLOYEE role users with that dealer_id are returned.
+     * ADMIN role users are NEVER shown to dealers (security protection).
      */
     @Query("""
         SELECT DISTINCT u FROM User u LEFT JOIN u.dealer d LEFT JOIN u.roles r
@@ -32,6 +33,7 @@ public interface UserRepository extends JpaRepository<User, Long>, QuerydslPredi
                LOWER(u.fullName) LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(u.email)    LIKE LOWER(CONCAT('%',:search,'%')))
           AND (:dealerId IS NULL OR (d.id = :dealerId AND r.roleName = 'EMPLOYEE'))
+          AND NOT EXISTS (SELECT 1 FROM User u2 JOIN u2.roles r2 WHERE u2.id = u.id AND r2.roleName = 'ADMIN')
         """)
     Page<User> search(@Param("search") String search,
                       @Param("dealerId") Long dealerId,

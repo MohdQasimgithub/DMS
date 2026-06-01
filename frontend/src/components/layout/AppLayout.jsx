@@ -25,7 +25,7 @@ const DRAWER_WIDTH = 256;
 // Navigation menu structure with role-based access
 const navItems = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-  { label: 'Showroom', icon: <Storefront />, path: '/showroom' },
+  // { label: 'Showroom', icon: <Storefront />, path: '/showroom' }, // Temporarily disabled
   // Only ADMIN sees the Dealers list
   { label: 'Dealers', icon: <Store />, path: '/dealers', roles: ['ADMIN'] },
   { label: 'Vehicles', icon: <DirectionsCar />, path: '/vehicles', roles: ['ADMIN', 'DEALER'] },
@@ -126,7 +126,12 @@ export default function AppLayout() {
                       {item.children.map((child) => (
                         <ListItem key={child.path} disablePadding>
                           <ListItemButton
-                            onClick={() => navigate(child.path)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Navigating to:', child.path);
+                              navigate(child.path);
+                            }}
                             sx={{
                               mx: 1, pl: 3, borderRadius: 2, py: 0.8,
                               color: isActive(child.path) ? '#fff' : 'rgba(255,255,255,0.55)',
@@ -148,7 +153,12 @@ export default function AppLayout() {
             return (
               <ListItem key={item.path} disablePadding>
                 <ListItemButton
-                  onClick={() => navigate(item.path)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Navigating to:', item.path);
+                    navigate(item.path);
+                  }}
                   sx={{
                     mx: 1, borderRadius: 2, py: 1,
                     color: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.65)',

@@ -139,6 +139,12 @@ public class UserService {
         boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
 
+        // CRITICAL: Prevent dealer from editing ADMIN user
+        boolean targetIsAdmin = user.getRoles().stream().anyMatch(r -> r.getRoleName().equals("ADMIN"));
+        if (isDealer && !isAdmin && targetIsAdmin) {
+            throw new BusinessException("You cannot edit admin accounts.");
+        }
+
         // Dealer can only update employees that belong to their own dealership
         if (isDealer && !isAdmin && !isSelf) {
             User dealerUser = userRepository.findByUsername(auth.getName())
@@ -208,6 +214,13 @@ public class UserService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+        
+        // CRITICAL: Prevent dealer from deleting ADMIN user
+        boolean targetIsAdmin = user.getRoles().stream().anyMatch(r -> r.getRoleName().equals("ADMIN"));
+        if (isDealer && !isAdmin && targetIsAdmin) {
+            throw new BusinessException("You cannot deactivate admin accounts.");
+        }
+        
         if (isDealer && !isAdmin) {
             User dealerUser = userRepository.findByUsername(auth.getName()).orElse(null);
             boolean isMyEmployee = dealerUser != null && dealerUser.getDealer() != null

@@ -10,7 +10,7 @@ import { persist } from 'zustand/middleware';
 
 export const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       // ========== STATE ==========
       user: null,              // User info (username, fullName, roles)
       accessToken: null,       // JWT access token (24 hours)
@@ -55,8 +55,14 @@ export const useAuthStore = create(
 
       // Check if user has specific role (for role-based access control)
       hasRole: (role) => {
-        const state = useAuthStore.getState();
+        const state = get();
         return state.user?.roles?.includes(role) ?? false;
+      },
+
+      // Check if user has any of the specified roles
+      hasAnyRole: (roles) => {
+        const state = get();
+        return roles.some(role => state.user?.roles?.includes(role)) ?? false;
       },
     }),
     { 

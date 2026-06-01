@@ -39,7 +39,7 @@ export default function MenuFormDialog({ open, onClose, editData }) {
 
   useEffect(() => {
     if (open) reset(editData || { sortOrder: 0 });
-  }, [open, editData]);
+  }, [open, editData, reset]);
 
   const mutation = useMutation({
     mutationFn: (data) => isEdit ? menuApi.update(editData.id, data) : menuApi.create(data),

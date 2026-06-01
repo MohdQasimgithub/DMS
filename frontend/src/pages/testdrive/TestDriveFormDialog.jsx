@@ -51,7 +51,7 @@ export default function TestDriveFormDialog({ open, onClose, editData, preselect
         reset({ status: 'SCHEDULED' });
       }
     }
-  }, [open, editData, preselectedVehicle]);
+  }, [open, editData, preselectedVehicle, isEdit, reset]);
 
   const { data: vehicles } = useQuery({
     queryKey: ['vehicles-all'],

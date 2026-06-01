@@ -52,7 +52,7 @@ export default function EnquiryFormDialog({ open, onClose, editData, preselected
         reset({ enquiryType: 'GENERAL', status: 'NEW' });
       }
     }
-  }, [open, editData, preselectedVehicle]);
+  }, [open, editData, preselectedVehicle, isEdit, reset]);
 
   const { data: vehicles } = useQuery({
     queryKey: ['vehicles-all'],

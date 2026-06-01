@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Box, Paper, Typography, ToggleButtonGroup, ToggleButton,
-  TextField, InputAdornment, Chip, CircularProgress,
+  TextField, Chip, CircularProgress,
   FormControl, InputLabel, Select, MenuItem, Button, Divider,
 } from '@mui/material';
-import { Search, Refresh } from '@mui/icons-material';
+import { Refresh } from '@mui/icons-material';
 import axiosInstance from '../../api/axiosInstance';
 import PageHeader from '../../components/common/PageHeader';
+import SearchBar from '../../components/common/SearchBar';
 
 const LEVEL_COLORS = {
   ERROR: 'error',
@@ -75,10 +76,12 @@ export default function LogsPage() {
           </Select>
         </FormControl>
 
-        <TextField size="small" placeholder="Search logs..."
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
-          sx={{ minWidth: 220 }} />
+        <SearchBar
+          placeholder="Search logs..."
+          onSearch={(v) => setSearch(v)}
+          debounceMs={300}
+          sx={{ minWidth: 220 }}
+        />
 
         <Button variant="outlined" size="small" startIcon={<Refresh />}
           onClick={() => refetch()} disabled={isFetching}>

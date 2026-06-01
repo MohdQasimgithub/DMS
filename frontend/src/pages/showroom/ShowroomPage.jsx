@@ -6,11 +6,12 @@ import {
   Skeleton, Divider,
 } from '@mui/material';
 import {
-  DirectionsCar, DriveEta, ContactMail, Search,
+  DirectionsCar, DriveEta, ContactMail,
   LocalGasStation, Speed, ColorLens, CalendarMonth,
   AttachMoney,
 } from '@mui/icons-material';
 import { vehicleApi } from '../../api/vehicleApi';
+import SearchBar from '../../components/common/SearchBar';
 import TestDriveFormDialog from '../testdrive/TestDriveFormDialog';
 import EnquiryFormDialog from '../enquiry/EnquiryFormDialog';
 
@@ -256,11 +257,9 @@ export default function ShowroomPage() {
 
       {/* Filters */}
       <Box display="flex" gap={2} mb={3} flexWrap="wrap" alignItems="center">
-        <TextField
-          size="small" placeholder="Search by model, variant, color, VIN..."
-          value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
-          sx={{ minWidth: 280, '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: '#94a3b8' }} /></InputAdornment> }}
+        <SearchBar
+          placeholder="Search by model, variant, color, VIN..."
+          onSearch={(v) => { setSearch(v); setPage(0); }}
         />
         <TextField select size="small" label="Model" value={modelFilter}
           onChange={e => { setModelFilter(e.target.value); setPage(0); }}

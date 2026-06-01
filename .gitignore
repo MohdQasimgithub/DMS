@@ -1,16 +1,54 @@
-# Java (Spring Boot)
+# ============================================
+# JAVA / SPRING BOOT
+# ============================================
 target/
+*.class
+*.jar
+*.war
+*.ear
 *.log
+*.log.*
+*.gz
 
-# Node (React)
+# ============================================
+# NODE / REACT
+# ============================================
 node_modules/
+dist/
+build/
+*.tsbuildinfo
 
-# Environment files
+# ============================================
+# ENVIRONMENT & SECRETS
+# ============================================
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# IDE files
+# ============================================
+# IDE & EDITORS
+# ============================================
 .vscode/
 .idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
 
-# OS files
+# ============================================
+# OS FILES
+# ============================================
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================
+# DOCUMENTATION (TEMPORARY)
+# ============================================
+FRONTEND_DOCUMENTATION.md
+FRONTEND_QUICK_REFERENCE.md
+FRONTEND_REVIEW_NOTES.txt

@@ -50,7 +50,7 @@ export default function VehicleFormDialog({ open, onClose, editData }) {
   // Reset form when dialog opens/closes or editData changes
   useEffect(() => {
     if (open) reset(editData || { status: 'AVAILABLE' });
-  }, [open, editData]);
+  }, [open, editData, reset]);
 
   // ============================================
   // Linked Dropdowns - Model → Variant → Color

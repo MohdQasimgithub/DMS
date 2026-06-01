@@ -1,25 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { TextField, InputAdornment, IconButton } from '@mui/material';
 import { Search, Clear } from '@mui/icons-material';
 
 // ============================================
 // SearchBar - Reusable search input component
 // ============================================
-// Features: Debounced search on Enter key, clear button
-export default function SearchBar({ placeholder = 'Search...', onSearch, sx = {} }) {
+// Features: Auto-debounced search (300ms delay), clear button, instant clear
+export default function SearchBar({ placeholder = 'Search...', onSearch, debounceMs = 300, sx = {} }) {
   const [value, setValue] = useState('');
+  const debounceTimer = useRef(null);
+  const onSearchRef = useRef(onSearch);
 
-  // Update local state and clear search if empty
+  // Keep ref updated
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  // Debounced search effect
+  useEffect(() => {
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    // If empty, search immediately (instant clear)
+    if (value === '') {
+      onSearchRef.current('');
+      return;
+    }
+
+    // Set new timer for debounced search
+    debounceTimer.current = setTimeout(() => {
+      onSearchRef.current(value);
+    }, debounceMs);
+
+    // Cleanup on unmount
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [value, debounceMs]);
+
+  // Update local state
   const handleChange = (e) => {
     setValue(e.target.value);
-    if (e.target.value === '') onSearch(''); // Auto-clear when empty
   };
 
-  // Trigger search on Enter key
-  const handleKeyDown = (e) => { if (e.key === 'Enter') onSearch(value); };
+  // Allow Enter key to trigger immediate search
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      onSearchRef.current(value);
+    }
+  };
   
   // Clear button handler
-  const handleClear = () => { setValue(''); onSearch(''); };
+  const handleClear = () => {
+    setValue('');
+    // onSearch('') will be called by useEffect
+  };
 
   return (
     <TextField

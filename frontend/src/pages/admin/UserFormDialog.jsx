@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -6,8 +6,9 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Grid, MenuItem, Checkbox, ListItemText,
   Select, InputLabel, FormControl, CircularProgress, FormHelperText,
-  Alert,
+  Alert, InputAdornment, IconButton,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../../api/userApi';
 import { roleApi } from '../../api/roleApi';
@@ -34,6 +35,9 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
   const { handleError } = useApiError();
   const isEdit = !!editData;
   const { user } = useAuthStore();
+  
+  // Show/hide password toggle
+  const [showPassword, setShowPassword] = useState(false);
 
   // Admin editing their own account — role field should be locked
   const isSelfEdit = isEdit && editData?.username === user?.username;
@@ -65,7 +69,7 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
         roleIds: editData.roles?.map((r) => roles?.find((ro) => ro.roleName === r)?.id).filter(Boolean) || [],
       } : { roleIds: [] });
     }
-  }, [open, editData, roles]);
+  }, [open, editData, roles, isEdit, reset]);
 
   const mutation = useMutation({
     mutationFn: (data) => isEdit ? userApi.update(editData.id, data) : userApi.create(data),
@@ -97,8 +101,28 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
                 error={!!errors.email} helperText={errors.email?.message} />
             </Grid>
             <Grid item xs={12}>
-              <TextField {...register('password')} label={isEdit ? 'New Password (leave blank to keep)' : 'Password *'}
-                type="password" fullWidth error={!!errors.password} helperText={errors.password?.message} />
+              <TextField 
+                {...register('password')} 
+                label={isEdit ? 'New Password (leave blank to keep)' : 'Password *'}
+                type={showPassword ? 'text' : 'password'} 
+                fullWidth 
+                error={!!errors.password} 
+                helperText={errors.password?.message || (!isEdit && 'Minimum 8 characters. Click the eye icon to reveal password for sharing with the user.')}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField {...register('fullName')} label="Full Name" fullWidth />

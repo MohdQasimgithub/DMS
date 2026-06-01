@@ -36,7 +36,7 @@ export default function DealerFormDialog({ open, onClose, editData }) {
 
   useEffect(() => {
     if (open) reset(editData || { status: 'ACTIVE' });
-  }, [open, editData]);
+  }, [open, editData, reset]);
 
   const mutation = useMutation({
     mutationFn: (data) => isEdit ? dealerApi.update(editData.id, data) : dealerApi.create(data),
