@@ -26,6 +26,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, Queryds
     @Query("SELECT DISTINCT v.color FROM Vehicle v WHERE v.model = :model AND v.variant = :variant ORDER BY v.color")
     List<String> findColorsByModelAndVariant(@Param("model") String model, @Param("variant") String variant);
 
+    /**
+     * ADMIN    → dealerId = null → sees all vehicles
+     * DEALER   → dealerId = X    → sees only their dealership's vehicles
+     * EMPLOYEE → dealerId = X    → sees only their dealership's vehicles
+     */
     @Query("""
         SELECT v FROM Vehicle v LEFT JOIN v.dealer d
         WHERE (:search IS NULL OR :search = '' OR
@@ -35,10 +40,12 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, Queryds
                LOWER(v.color)   LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(d.dealerName) LIKE LOWER(CONCAT('%',:search,'%')))
           AND (:statusStr IS NULL OR :statusStr = '' OR CAST(v.status AS string) = :statusStr)
+          AND (:dealerId IS NULL OR d.id = :dealerId)
           AND (:showAll = true OR v.status <> 'SOLD')
         """)
     Page<Vehicle> search(@Param("search") String search,
                          @Param("statusStr") String statusStr,
+                         @Param("dealerId") Long dealerId,
                          @Param("showAll") boolean showAll,
                          Pageable pageable);
 }

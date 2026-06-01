@@ -5,6 +5,7 @@ import com.hyundai.dms.common.exception.ResourceNotFoundException;
 import com.hyundai.dms.common.response.PageResponse;
 import com.hyundai.dms.domain.dealer.entity.Dealer;
 import com.hyundai.dms.domain.dealer.repository.DealerRepository;
+import com.hyundai.dms.domain.user.repository.UserRepository;
 import com.hyundai.dms.domain.vehicle.dto.VehicleRequest;
 import com.hyundai.dms.domain.vehicle.dto.VehicleResponse;
 import com.hyundai.dms.domain.vehicle.entity.Vehicle;
@@ -12,6 +13,8 @@ import com.hyundai.dms.domain.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +26,34 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final DealerRepository dealerRepository;
+    private final UserRepository userRepository;
 
+    /**
+     * ADMIN    → sees all vehicles (dealerId = null)
+     * DEALER   → sees only vehicles from their dealership (dealerId = X)
+     * EMPLOYEE → sees only vehicles from their dealership (dealerId = X)
+     */
     @Transactional(readOnly = true)
     public PageResponse<VehicleResponse> getAll(String search, Vehicle.VehicleStatus status, Pageable pageable) {
         String statusStr = status != null ? status.name() : null;
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+        boolean isEmployee = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
+        
+        Long dealerId = null;
+        
+        // DEALER or EMPLOYEE: Filter by their dealership
+        if ((isDealer || isEmployee) && !isAdmin) {
+            dealerId = userRepository.findDealerIdByUsername(auth.getName());
+        }
+        // ADMIN: See all (dealerId = null)
+        
         // showAll=true only when admin explicitly filters by a specific status
         boolean showAll = statusStr != null && !statusStr.isEmpty();
-        return PageResponse.of(vehicleRepository.search(search, statusStr, showAll, pageable).map(this::toResponse));
+        
+        return PageResponse.of(vehicleRepository.search(search, statusStr, dealerId, showAll, pageable).map(this::toResponse));
     }
 
     @Transactional(readOnly = true)

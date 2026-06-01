@@ -31,6 +31,9 @@ public class DealerService {
     private final AuditLogService auditLogService;
 
     /**
+     * ADMIN  → sees all dealers (dealerId = null)
+     * DEALER → sees only their own dealership (dealerId = X)
+     * 
      * READ_UNCOMMITTED would allow dirty reads (seeing uncommitted changes).
      * We use READ_COMMITTED here — only committed data is visible.
      * This prevents dirty reads but non-repeatable reads can still occur.
@@ -47,17 +50,10 @@ public class DealerService {
 
         Long dealerId = null;
         if (isDealer && !isAdmin) {
-            userRepository.findByUsername(auth.getName()).ifPresent(u -> {
-                // dealerId will be set below
-            });
-            var dealerUser = userRepository.findByUsername(auth.getName()).orElse(null);
-            if (dealerUser != null && dealerUser.getDealer() != null) {
-                dealerId = dealerUser.getDealer().getId();
-            }
+            dealerId = userRepository.findDealerIdByUsername(auth.getName());
         }
 
-        final Long finalDealerId = dealerId;
-        return PageResponse.of(dealerRepository.search(search, statusStr, showAll, finalDealerId, pageable).map(this::toResponse));
+        return PageResponse.of(dealerRepository.search(search, statusStr, showAll, dealerId, pageable).map(this::toResponse));
     }
 
     /**

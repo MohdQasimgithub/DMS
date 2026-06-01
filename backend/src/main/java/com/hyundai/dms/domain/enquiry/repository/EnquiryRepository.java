@@ -10,8 +10,9 @@ import org.springframework.data.repository.query.Param;
 public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
 
     /**
-     * ownerUsername = null  → ADMIN/DEALER sees all
-     * ownerUsername = "xyz" → EMPLOYEE sees only their own submissions
+     * ADMIN    → dealerId = null, ownerUsername = null → sees all
+     * DEALER   → dealerId = X, ownerUsername = null    → sees only their dealership's enquiries
+     * EMPLOYEE → dealerId = null, ownerUsername = "xyz" → sees only their own submissions
      */
     @Query("""
         SELECT e FROM Enquiry e
@@ -22,11 +23,13 @@ public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
                LOWER(e.dealer.dealerName) LIKE LOWER(CONCAT('%',:search,'%')))
           AND (:statusStr IS NULL OR :statusStr = '' OR CAST(e.status AS string) = :statusStr)
           AND (:typeStr   IS NULL OR :typeStr   = '' OR CAST(e.enquiryType AS string) = :typeStr)
+          AND (:dealerId IS NULL OR e.dealer.id = :dealerId)
           AND (:ownerUsername IS NULL OR e.createdBy = :ownerUsername)
         """)
     Page<Enquiry> search(@Param("search") String search,
                          @Param("statusStr") String statusStr,
                          @Param("typeStr") String typeStr,
+                         @Param("dealerId") Long dealerId,
                          @Param("ownerUsername") String ownerUsername,
                          Pageable pageable);
 }

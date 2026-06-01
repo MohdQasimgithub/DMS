@@ -22,18 +22,38 @@ public class EnquiryService {
     private final EnquiryRepository enquiryRepository;
     private final VehicleRepository vehicleRepository;
     private final DealerRepository dealerRepository;
+    private final com.hyundai.dms.domain.user.repository.UserRepository userRepository;
 
     /**
-     * ADMIN / DEALER → sees all enquiries (ownerUsername = null)
-     * EMPLOYEE       → sees only their own submissions
+     * ADMIN    → sees all enquiries (dealerId = null)
+     * DEALER   → sees only enquiries for their dealership (dealerId = X)
+     * EMPLOYEE → sees only their own submissions (ownerUsername = current username)
      */
     @Transactional(readOnly = true)
     public PageResponse<EnquiryResponse> search(String search, Enquiry.EnquiryStatus status,
                                                  Enquiry.EnquiryType type, Pageable pageable) {
         String statusStr = status != null ? status.name() : null;
         String typeStr   = type   != null ? type.name()   : null;
-        String ownerUsername = resolveOwnerFilter();
-        return PageResponse.of(enquiryRepository.search(search, statusStr, typeStr, ownerUsername, pageable).map(this::toResponse));
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+        boolean isEmployee = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
+        
+        Long dealerId = null;
+        String ownerUsername = null;
+        
+        // DEALER: Filter by their dealership
+        if (isDealer && !isAdmin) {
+            dealerId = userRepository.findDealerIdByUsername(auth.getName());
+        }
+        // EMPLOYEE: Filter by their own submissions
+        else if (isEmployee && !isAdmin && !isDealer) {
+            ownerUsername = auth.getName();
+        }
+        // ADMIN: See all (dealerId = null, ownerUsername = null)
+        
+        return PageResponse.of(enquiryRepository.search(search, statusStr, typeStr, dealerId, ownerUsername, pageable).map(this::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -80,16 +100,6 @@ public class EnquiryService {
         Enquiry e = findById(id);
         e.setStatus(Enquiry.EnquiryStatus.CLOSED);
         enquiryRepository.save(e);
-    }
-
-    // ADMIN/DEALER → null (see all); EMPLOYEE → own username
-    private String resolveOwnerFilter() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) return null;
-        boolean isAdmin  = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
-        if (isAdmin || isDealer) return null;
-        return auth.getName(); // EMPLOYEE sees only own
     }
 
     private Enquiry findById(Long id) {

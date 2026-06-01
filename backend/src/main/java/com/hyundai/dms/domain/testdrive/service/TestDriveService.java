@@ -26,14 +26,33 @@ public class TestDriveService {
     private final UserRepository userRepository;
 
     /**
-     * ADMIN / DEALER → sees all test drives (ownerUsername = null)
-     * EMPLOYEE       → sees only their own bookings (ownerUsername = current username)
+     * ADMIN    → sees all test drives (dealerId = null)
+     * DEALER   → sees only test drives for their dealership (dealerId = X)
+     * EMPLOYEE → sees only their own bookings (ownerUsername = current username)
      */
     @Transactional(readOnly = true)
     public PageResponse<TestDriveResponse> search(String search, TestDrive.TestDriveStatus status, Pageable pageable) {
         String statusStr = status != null ? status.name() : null;
-        String ownerUsername = resolveOwnerFilter();
-        return PageResponse.of(testDriveRepository.search(search, statusStr, ownerUsername, pageable).map(this::toResponse));
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDealer = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
+        boolean isEmployee = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
+        
+        Long dealerId = null;
+        String ownerUsername = null;
+        
+        // DEALER: Filter by their dealership
+        if (isDealer && !isAdmin) {
+            dealerId = userRepository.findDealerIdByUsername(auth.getName());
+        }
+        // EMPLOYEE: Filter by their own bookings
+        else if (isEmployee && !isAdmin && !isDealer) {
+            ownerUsername = auth.getName();
+        }
+        // ADMIN: See all (dealerId = null, ownerUsername = null)
+        
+        return PageResponse.of(testDriveRepository.search(search, statusStr, dealerId, ownerUsername, pageable).map(this::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -100,22 +119,6 @@ public class TestDriveService {
         TestDrive td = findById(id);
         td.setStatus(TestDrive.TestDriveStatus.CANCELLED);
         testDriveRepository.save(td);
-    }
-
-    // Returns null for ADMIN/DEALER (see all), current username for EMPLOYEE (own only)
-    private String resolveOwnerFilter() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) return null;
-        boolean isEmployee = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_EMPLOYEE"));
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        boolean isDealer = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_DEALER"));
-        // ADMIN and DEALER see all; EMPLOYEE sees only their own
-        if (isAdmin || isDealer) return null;
-        if (isEmployee) return auth.getName();
-        return auth.getName(); // default: own only
     }
 
     private TestDrive findById(Long id) {
