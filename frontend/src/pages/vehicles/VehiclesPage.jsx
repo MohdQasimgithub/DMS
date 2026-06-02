@@ -107,7 +107,10 @@ export default function VehiclesPage() {
       <PageHeader title="Vehicles" onAdd={() => { setEditData(null); setFormOpen(true); }} />
 
       {/* Search and filter controls */}
-      <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" sx={{
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 1.5, sm: 2 }
+      }}>
         {/* Debounced search bar */}
         <SearchBar placeholder="Search by VIN, model, variant, color, dealer..."
           onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
@@ -115,7 +118,7 @@ export default function VehiclesPage() {
         {/* Status filter dropdown */}
         <TextField select size="small" label="Status" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
-          sx={{ minWidth: 150 }}>
+          sx={{ minWidth: { xs: '100%', sm: 150 } }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="AVAILABLE">Available</MenuItem>
           <MenuItem value="RESERVED">Reserved</MenuItem>

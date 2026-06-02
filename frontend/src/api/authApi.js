@@ -17,4 +17,7 @@ export const authApi = {
   refresh: (token) => axiosInstance.post('/v1/auth/refresh', null, {
     headers: { 'X-Refresh-Token': token }
   }),
+
+  // Check remaining login attempts for a username
+  checkAttempts: (username) => axiosInstance.get(`/v1/auth/check-attempts/${username}`),
 };

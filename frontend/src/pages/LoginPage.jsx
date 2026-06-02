@@ -11,7 +11,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
   Box, TextField, Button, Typography, InputAdornment,
-  IconButton, CircularProgress, Alert, Divider,
+  IconButton, CircularProgress, Alert,
 } from '@mui/material';
 import { Visibility, VisibilityOff, DirectionsCar } from '@mui/icons-material';
 import { authApi } from '../api/authApi';

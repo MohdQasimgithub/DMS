@@ -53,7 +53,8 @@ public class VehicleService {
         // showAll=true only when admin explicitly filters by a specific status
         boolean showAll = statusStr != null && !statusStr.isEmpty();
         
-        return PageResponse.of(vehicleRepository.search(search, statusStr, dealerId, showAll, pageable).map(this::toResponse));
+        Page<Vehicle> resultPage = vehicleRepository.search(search, statusStr, dealerId, showAll, pageable);
+        return PageResponse.of(resultPage.map(this::toResponse));
     }
 
     @Transactional(readOnly = true)

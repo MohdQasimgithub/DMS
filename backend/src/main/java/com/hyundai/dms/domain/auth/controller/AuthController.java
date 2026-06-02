@@ -47,4 +47,16 @@ public class AuthController {
         // JWT is stateless; client discards token
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
+
+    @GetMapping("/check-attempts/{username}")
+    @Operation(summary = "Check remaining login attempts for a username")
+    public ResponseEntity<ApiResponse<Integer>> checkAttempts(@PathVariable String username) {
+        return ResponseEntity.ok(ApiResponse.success(authService.getRemainingAttempts(username)));
+    }
+
+    @GetMapping("/login-status/{username}")
+    @Operation(summary = "Get detailed login attempt status including lock information")
+    public ResponseEntity<ApiResponse<AuthService.LoginAttemptStatus>> getLoginStatus(@PathVariable String username) {
+        return ResponseEntity.ok(ApiResponse.success(authService.getLoginAttemptStatus(username)));
+    }
 }

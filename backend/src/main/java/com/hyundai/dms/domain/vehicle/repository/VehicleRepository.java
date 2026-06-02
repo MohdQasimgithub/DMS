@@ -30,19 +30,34 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long>, Queryds
      * ADMIN    → dealerId = null → sees all vehicles
      * DEALER   → dealerId = X    → sees only their dealership's vehicles
      * EMPLOYEE → dealerId = X    → sees only their dealership's vehicles
+     * 
+     * When showAll=false, exclude SOLD vehicles from BOTH results AND count
      */
-    @Query("""
-        SELECT v FROM Vehicle v LEFT JOIN v.dealer d
+    @Query(value = """
+        SELECT v.* FROM vehicles v LEFT JOIN dealers d ON v.dealer_id = d.id
         WHERE (:search IS NULL OR :search = '' OR
                LOWER(v.vin)     LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(v.model)   LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(v.variant) LIKE LOWER(CONCAT('%',:search,'%')) OR
                LOWER(v.color)   LIKE LOWER(CONCAT('%',:search,'%')) OR
-               LOWER(d.dealerName) LIKE LOWER(CONCAT('%',:search,'%')))
-          AND (:statusStr IS NULL OR :statusStr = '' OR CAST(v.status AS string) = :statusStr)
+               LOWER(d.dealer_name) LIKE LOWER(CONCAT('%',:search,'%')))
+          AND (:statusStr IS NULL OR :statusStr = '' OR v.status = :statusStr)
           AND (:dealerId IS NULL OR d.id = :dealerId)
           AND (:showAll = true OR v.status <> 'SOLD')
-        """)
+        """,
+        countQuery = """
+        SELECT COUNT(v.id) FROM vehicles v LEFT JOIN dealers d ON v.dealer_id = d.id
+        WHERE (:search IS NULL OR :search = '' OR
+               LOWER(v.vin)     LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(v.model)   LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(v.variant) LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(v.color)   LIKE LOWER(CONCAT('%',:search,'%')) OR
+               LOWER(d.dealer_name) LIKE LOWER(CONCAT('%',:search,'%')))
+          AND (:statusStr IS NULL OR :statusStr = '' OR v.status = :statusStr)
+          AND (:dealerId IS NULL OR d.id = :dealerId)
+          AND (:showAll = true OR v.status <> 'SOLD')
+        """,
+        nativeQuery = true)
     Page<Vehicle> search(@Param("search") String search,
                          @Param("statusStr") String statusStr,
                          @Param("dealerId") Long dealerId,

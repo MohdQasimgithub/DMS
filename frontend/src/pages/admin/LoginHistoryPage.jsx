@@ -107,12 +107,15 @@ export default function LoginHistoryPage() {
       </Box>
 
       {/* Filters */}
-      <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" sx={{
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 1.5, sm: 2 }
+      }}>
         <SearchBar placeholder="Search by username or role..."
           onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
         <TextField select size="small" label="Status" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
-          sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}>
+          sx={{ minWidth: { xs: '100%', sm: 140 }, '& .MuiOutlinedInput-root': { bgcolor: '#fff' } }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="SUCCESS">Success</MenuItem>
           <MenuItem value="FAILED">Failed</MenuItem>

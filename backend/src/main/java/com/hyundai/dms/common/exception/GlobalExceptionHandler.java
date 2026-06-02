@@ -65,15 +65,23 @@ public class GlobalExceptionHandler {
     // Bad credentials (401)
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+        // Show the actual message which includes remaining attempts
+        String message = ex.getMessage() != null && ex.getMessage().contains("attempt") 
+            ? ex.getMessage() 
+            : "Invalid username or password";
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Invalid username or password"));
+                .body(ApiResponse.error(message));
     }
 
     // Account locked (423)
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<ApiResponse<Void>> handleLocked(LockedException ex) {
+        // Show the actual lock message
+        String message = ex.getMessage() != null 
+            ? ex.getMessage() 
+            : "Account is locked due to too many failed login attempts";
         return ResponseEntity.status(HttpStatus.LOCKED)
-                .body(ApiResponse.error("Account is locked due to too many failed login attempts"));
+                .body(ApiResponse.error(message));
     }
 
     // Access denied (403)

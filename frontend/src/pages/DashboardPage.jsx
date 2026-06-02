@@ -13,26 +13,27 @@ const statusColors = { AVAILABLE: '#10b981', RESERVED: '#f59e0b', SOLD: '#ef4444
 function StatCard({ title, value, subtitle, icon, color, trend, trendLabel }) {
   return (
     <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-      <CardContent sx={{ p: 2.5 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-          <Box>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1}>
+          <Box flex={1} minWidth={0}>
             <Typography variant="caption" fontWeight={600} color="text.secondary"
-              sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.7rem' }}>
+              sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>
               {title}
             </Typography>
-            <Typography variant="h4" fontWeight={800} color="text.primary" mt={0.5} lineHeight={1}>
-              {value ?? <LinearProgress sx={{ width: 60, mt: 1 }} />}
+            <Typography variant="h4" fontWeight={800} color="text.primary" mt={0.5} lineHeight={1}
+              sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+              {value ?? <LinearProgress sx={{ width: { xs: 50, sm: 60 }, mt: 1 }} />}
             </Typography>
-            {subtitle && <Typography variant="caption" color="text.secondary" mt={0.5} display="block">{subtitle}</Typography>}
+            {subtitle && <Typography variant="caption" color="text.secondary" mt={0.5} display="block" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{subtitle}</Typography>}
             {trendLabel && (
               <Box display="flex" alignItems="center" gap={0.5} mt={1}>
-                {trend >= 0 ? <TrendingUp sx={{ fontSize: 14, color: '#10b981' }} /> : <TrendingDown sx={{ fontSize: 14, color: '#ef4444' }} />}
-                <Typography variant="caption" sx={{ color: trend >= 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>{trendLabel}</Typography>
+                {trend >= 0 ? <TrendingUp sx={{ fontSize: { xs: 12, sm: 14 }, color: '#10b981' }} /> : <TrendingDown sx={{ fontSize: { xs: 12, sm: 14 }, color: '#ef4444' }} />}
+                <Typography variant="caption" sx={{ color: trend >= 0 ? '#10b981' : '#ef4444', fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{trendLabel}</Typography>
               </Box>
             )}
           </Box>
-          <Avatar sx={{ width: 48, height: 48, bgcolor: `${color}15`, borderRadius: 2 }}>
-            <Box sx={{ color }}>{icon}</Box>
+          <Avatar sx={{ width: { xs: 40, sm: 48 }, height: { xs: 40, sm: 48 }, bgcolor: `${color}15`, borderRadius: 2 }}>
+            <Box sx={{ color, '& svg': { fontSize: { xs: 20, sm: 24 } } }}>{icon}</Box>
           </Avatar>
         </Box>
       </CardContent>
@@ -58,10 +59,10 @@ function EmployeeDashboard({ user }) {
 
   return (
     <Box>
-      <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+      <Alert severity="info" sx={{ mb: { xs: 2, sm: 3 }, borderRadius: 2, fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
         As an <strong>Employee</strong>, you can book test drives and submit enquiries. You can only view your own bookings.
       </Alert>
-      <Grid container spacing={2.5} mb={3}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }} mb={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} sm={6}>
           <StatCard title="My Test Drives" value={myTestDrives?.totalElements}
             subtitle="Bookings you created" icon={<DriveEta />} color="#f59e0b" trend={1} trendLabel="Your bookings" />
@@ -72,11 +73,11 @@ function EmployeeDashboard({ user }) {
         </Grid>
       </Grid>
 
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="subtitle2" fontWeight={700} mb={2}>My Upcoming Test Drives</Typography>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Typography variant="subtitle2" fontWeight={700} mb={2} sx={{ fontSize: { xs: '0.875rem', sm: '0.95rem' } }}>My Upcoming Test Drives</Typography>
               <List disablePadding>
                 {(myTestDrives?.content || []).slice(0, 5).map((td, i) => (
                   <Box key={td.id}>
@@ -110,8 +111,8 @@ function EmployeeDashboard({ user }) {
         </Grid>
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="subtitle2" fontWeight={700} mb={2}>My Recent Enquiries</Typography>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Typography variant="subtitle2" fontWeight={700} mb={2} sx={{ fontSize: { xs: '0.875rem', sm: '0.95rem' } }}>My Recent Enquiries</Typography>
               <List disablePadding>
                 {(myEnquiries?.content || []).slice(0, 5).map((e, i) => (
                   <Box key={e.id}>
@@ -156,7 +157,7 @@ function AdminDealerDashboard({ user, isAdmin }) {
 
   return (
     <>
-      <Grid container spacing={2.5} mb={3}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }} mb={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} sm={6} lg={isAdmin ? 3 : 4}>
           <StatCard title="Total Dealers" value={dealers?.totalElements} subtitle="Across all regions"
             icon={<Store />} color="#002C5F" trendLabel="+3 this month" trend={1} />
@@ -177,12 +178,12 @@ function AdminDealerDashboard({ user, isAdmin }) {
         )}
       </Grid>
 
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent sx={{ p: 2.5 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="subtitle2" fontWeight={700}>Recent Vehicles</Typography>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.875rem', sm: '0.95rem' } }}>Recent Vehicles</Typography>
                 <Chip label="Live" size="small" sx={{ bgcolor: '#d1fae5', color: '#059669', fontWeight: 700, fontSize: '0.68rem' }} />
               </Box>
               <List disablePadding>
@@ -212,9 +213,9 @@ function AdminDealerDashboard({ user, isAdmin }) {
 
         <Grid item xs={12} md={6}>
           <Card>
-            <CardContent sx={{ p: 2.5 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="subtitle2" fontWeight={700}>Upcoming Test Drives</Typography>
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.875rem', sm: '0.95rem' } }}>Upcoming Test Drives</Typography>
                 <Chip label={`${testDrives?.totalElements || 0} scheduled`} size="small"
                   sx={{ bgcolor: '#fef3c7', color: '#d97706', fontWeight: 700, fontSize: '0.68rem' }} />
               </Box>
@@ -250,25 +251,25 @@ function AdminDealerDashboard({ user, isAdmin }) {
         {isAdmin && (
           <Grid item xs={12}>
             <Card>
-              <CardContent sx={{ p: 2.5 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="subtitle2" fontWeight={700}>New Enquiries</Typography>
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.875rem', sm: '0.95rem' } }}>New Enquiries</Typography>
                   <Chip label="Needs Response" size="small" sx={{ bgcolor: '#fee2e2', color: '#dc2626', fontWeight: 700, fontSize: '0.68rem' }} />
                 </Box>
                 <Grid container spacing={1.5}>
                   {(enquiries?.content || []).slice(0, 4).map((e) => (
                     <Grid item xs={12} sm={6} md={3} key={e.id}>
                       <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid #f1f5f9', bgcolor: '#fafafa' }}>
-                        <Typography variant="body2" fontWeight={700} noWrap>{e.customerName}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap display="block">{e.enquiryType?.replace('_', ' ')}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap display="block" mt={0.5}>{e.dealerName}</Typography>
+                        <Typography variant="body2" fontWeight={700} noWrap sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>{e.customerName}</Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{e.enquiryType?.replace('_', ' ')}</Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap display="block" mt={0.5} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{e.dealerName}</Typography>
                         <Chip label="NEW" size="small" sx={{ mt: 1, height: 18, fontSize: '0.62rem', bgcolor: '#dbeafe', color: '#2563eb', fontWeight: 700 }} />
                       </Box>
                     </Grid>
                   ))}
                   {!enquiries?.content?.length && (
                     <Grid item xs={12}>
-                      <Typography variant="body2" color="text.secondary" textAlign="center" py={1}>No new enquiries</Typography>
+                      <Typography variant="body2" color="text.secondary" textAlign="center" py={1} sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>No new enquiries</Typography>
                     </Grid>
                   )}
                 </Grid>
@@ -295,15 +296,19 @@ export default function DashboardPage() {
       {/* Welcome banner */}
       <Box sx={{
         background: 'linear-gradient(135deg, #002C5F 0%, #1a4a7a 50%, #00AAD2 100%)',
-        borderRadius: 3, p: 3, mb: 3, position: 'relative', overflow: 'hidden',
+        borderRadius: { xs: 2, sm: 3 }, 
+        p: { xs: 2, sm: 3 }, 
+        mb: { xs: 2, sm: 3 }, 
+        position: 'relative', 
+        overflow: 'hidden',
       }}>
-        <Box sx={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-        <Box sx={{ position: 'absolute', bottom: -30, right: 80, width: 120, height: 120, borderRadius: '50%', background: 'rgba(0,170,210,0.15)' }} />
+        <Box sx={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: { xs: 'none', sm: 'block' } }} />
+        <Box sx={{ position: 'absolute', bottom: -30, right: 80, width: 120, height: 120, borderRadius: '50%', background: 'rgba(0,170,210,0.15)', display: { xs: 'none', sm: 'block' } }} />
         <Box position="relative">
-          <Typography variant="h5" sx={{ color: '#fff', fontWeight: 800 }}>
+          <Typography variant="h5" sx={{ color: '#fff', fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             {greeting}, {user?.fullName?.split(' ')[0] || user?.username} 👋
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)', mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)', mt: 0.5, fontSize: { xs: '0.813rem', sm: '0.875rem' } }}>
             {isEmployee
               ? 'You can book test drives and submit enquiries from here.'
               : "Here's what's happening at Hyundai AutoEver today."}

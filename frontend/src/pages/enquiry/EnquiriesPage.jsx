@@ -97,12 +97,15 @@ export default function EnquiriesPage() {
         addLabel="New Enquiry"
       />
 
-      <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" sx={{
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 1.5, sm: 2 }
+      }}>
         <SearchBar placeholder="Search by customer, phone, vehicle, dealer..."
           onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
         <TextField select size="small" label="Status" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
-          sx={{ minWidth: 140 }}>
+          sx={{ minWidth: { xs: '100%', sm: 140 } }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="NEW">New</MenuItem>
           <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
@@ -111,7 +114,7 @@ export default function EnquiriesPage() {
         </TextField>
         <TextField select size="small" label="Type" value={typeFilter}
           onChange={(e) => { setTypeFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
-          sx={{ minWidth: 140 }}>
+          sx={{ minWidth: { xs: '100%', sm: 140 } }}>
           <MenuItem value="">All Types</MenuItem>
           <MenuItem value="PURCHASE">Purchase</MenuItem>
           <MenuItem value="TEST_DRIVE">Test Drive</MenuItem>

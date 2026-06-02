@@ -12,6 +12,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../../api/userApi';
 import { roleApi } from '../../api/roleApi';
+import { dealerApi } from '../../api/dealerApi';
 import { useNotify } from '../../hooks/useNotify';
 import { useApiError } from '../../hooks/useApiError';
 import { useAuthStore } from '../../store/authStore';
@@ -27,6 +28,7 @@ const schema = yup.object({
   fullName: yup.string().max(100),
   phoneNumber: yup.string().nullable(),
   roleIds: yup.array().of(yup.number()),
+  dealerId: yup.number().nullable(), // Optional dealer assignment
 });
 
 export default function UserFormDialog({ open, onClose, editData, isDealer = false }) {
@@ -61,13 +63,22 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
     enabled: open,
   });
 
+  // Fetch all dealers for dropdown (only for ADMIN users)
+  const { data: dealers } = useQuery({
+    queryKey: ['dealers-all'],
+    queryFn: () => dealerApi.getAll({ page: 0, size: 1000, status: 'ACTIVE' }),
+    select: (res) => res.data.data.content || [],
+    enabled: open && !isDealer, // Only fetch if admin is creating/editing
+  });
+
   useEffect(() => {
     if (open) {
       reset(isEdit ? {
         ...editData,
         password: '',
         roleIds: editData.roles?.map((r) => roles?.find((ro) => ro.roleName === r)?.id).filter(Boolean) || [],
-      } : { roleIds: [] });
+        dealerId: editData.dealerId || null,
+      } : { roleIds: [], dealerId: null });
     }
   }, [open, editData, roles, isEdit, reset]);
 
@@ -154,6 +165,36 @@ export default function UserFormDialog({ open, onClose, editData, isDealer = fal
                 {errors.roleIds && <FormHelperText>{errors.roleIds.message}</FormHelperText>}
               </FormControl>
             </Grid>
+            
+            {/* Dealer Assignment - Only shown for Admin users */}
+            {!isDealer && (
+              <Grid item xs={12}>
+                <FormControl fullWidth error={!!errors.dealerId}>
+                  <InputLabel>Assign to Dealer (Optional)</InputLabel>
+                  <Controller name="dealerId" control={control} render={({ field }) => (
+                    <Select 
+                      {...field} 
+                      label="Assign to Dealer (Optional)"
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                    >
+                      <MenuItem value="">
+                        <em>None (No dealer assignment)</em>
+                      </MenuItem>
+                      {(dealers || []).map((dealer) => (
+                        <MenuItem key={dealer.id} value={dealer.id}>
+                          {dealer.dealerName} - {dealer.city} ({dealer.region})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )} />
+                  <FormHelperText>
+                    Link this user to a specific dealer. Required for DEALER and EMPLOYEE roles.
+                  </FormHelperText>
+                  {errors.dealerId && <FormHelperText error>{errors.dealerId.message}</FormHelperText>}
+                </FormControl>
+              </Grid>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions>

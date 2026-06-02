@@ -115,12 +115,15 @@ export default function DealersPage() {
       <PageHeader title="Dealers" onAdd={isAdmin ? () => { setEditData(null); setFormOpen(true); } : undefined} />
 
       {/* Search and filter controls */}
-      <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" sx={{ 
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 1.5, sm: 2 }
+      }}>
         <SearchBar placeholder="Search by name, code, city, region, manager..."
           onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
         <TextField select size="small" label="Status" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
-          sx={{ minWidth: 140 }}>
+          sx={{ minWidth: { xs: '100%', sm: 140 } }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="ACTIVE">Active</MenuItem>
           <MenuItem value="INACTIVE">Inactive</MenuItem>
@@ -128,8 +131,8 @@ export default function DealersPage() {
         </TextField>
       </Box>
 
-      {/* Keyboard shortcut hint */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+      {/* Keyboard shortcut hint - hide on mobile */}
+      <Box display={{ xs: 'none', sm: 'flex' }} justifyContent="space-between" alignItems="center" mb={1}>
         <Typography variant="caption" color="text.secondary">
           Tip: Press <strong>Ctrl+N</strong> to add new dealer.
         </Typography>

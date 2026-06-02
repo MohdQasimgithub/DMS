@@ -13,6 +13,7 @@ import { vehicleApi } from '../../api/vehicleApi';
 import { dealerApi } from '../../api/dealerApi';
 import { useNotify } from '../../hooks/useNotify';
 import { useApiError } from '../../hooks/useApiError';
+import { useAuthStore } from '../../store/authStore';
 
 const schema = yup.object({
   customerName: yup.string().required('Customer name is required').max(100),
@@ -30,12 +31,21 @@ export default function TestDriveFormDialog({ open, onClose, editData, preselect
   const queryClient = useQueryClient();
   const notify = useNotify();
   const { handleError } = useApiError();
+  const { user } = useAuthStore();
   const isEdit = !!editData;
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
+  // Check if current user has a dealer assigned (for employees/dealers)
+  const userDealerId = user?.dealerId || null;
+  const isEmployee = user?.roles?.includes('EMPLOYEE');
+  const isDealer = user?.roles?.includes('DEALER');
+
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: { status: 'SCHEDULED' },
   });
+
+  // Watch selected dealer to filter vehicles
+  const selectedDealerId = watch('dealerId');
 
   useEffect(() => {
     if (open) {
@@ -53,10 +63,18 @@ export default function TestDriveFormDialog({ open, onClose, editData, preselect
     }
   }, [open, editData, preselectedVehicle, isEdit, reset]);
 
+  // Fetch vehicles - filter by dealer for employees
   const { data: vehicles } = useQuery({
-    queryKey: ['vehicles-all'],
+    queryKey: ['vehicles-testdrive', selectedDealerId],
     queryFn: () => vehicleApi.getAll({ size: 200, status: 'AVAILABLE' }),
-    select: (res) => res.data.data.content,
+    select: (res) => {
+      let vehicleList = res.data.data.content || [];
+      // If employee/dealer and has selectedDealerId, filter vehicles by that dealer
+      if (selectedDealerId) {
+        vehicleList = vehicleList.filter(v => v.dealerId === selectedDealerId);
+      }
+      return vehicleList;
+    },
     enabled: open,
   });
 

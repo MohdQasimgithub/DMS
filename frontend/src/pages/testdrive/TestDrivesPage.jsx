@@ -95,12 +95,15 @@ export default function TestDrivesPage() {
         addLabel="Book Test Drive"
       />
 
-      <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" sx={{
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 1.5, sm: 2 }
+      }}>
         <SearchBar placeholder="Search by customer, phone, vehicle, dealer..."
           onSearch={(v) => { setSearch(v); setPaginationModel(m => ({ ...m, page: 0 })); }} />
         <TextField select size="small" label="Status" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPaginationModel(m => ({ ...m, page: 0 })); }}
-          sx={{ minWidth: 150 }}>
+          sx={{ minWidth: { xs: '100%', sm: 150 } }}>
           <MenuItem value="">All Status</MenuItem>
           <MenuItem value="SCHEDULED">Scheduled</MenuItem>
           <MenuItem value="COMPLETED">Completed</MenuItem>

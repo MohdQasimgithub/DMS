@@ -50,20 +50,30 @@ export default function RolesPage() {
     },
     {
       field: 'actions', headerName: 'Actions', width: 100, sortable: false,
-      renderCell: ({ row }) => (
-        <>
-          <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => { setEditData(row); setFormOpen(true); }}>
-              <Edit fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Deactivate">
-            <IconButton size="small" color="error" onClick={() => setDeleteId(row.id)}>
-              <Delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </>
-      ),
+      renderCell: ({ row }) => {
+        const isAdmin = row.roleName === 'ADMIN';
+        return (
+          <>
+            <Tooltip title="Edit">
+              <IconButton size="small" onClick={() => { setEditData(row); setFormOpen(true); }}>
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={isAdmin ? "ADMIN role cannot be deactivated" : "Deactivate"}>
+              <span>
+                <IconButton 
+                  size="small" 
+                  color="error" 
+                  onClick={() => setDeleteId(row.id)}
+                  disabled={isAdmin}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </>
+        );
+      },
     },
   ];
 

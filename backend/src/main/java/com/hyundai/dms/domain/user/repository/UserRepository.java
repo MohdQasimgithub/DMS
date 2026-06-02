@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long>, QuerydslPredicateExecutor<User> {
@@ -50,10 +51,14 @@ public interface UserRepository extends JpaRepository<User, Long>, QuerydslPredi
     void incrementFailedAttempts(@Param("username") String username);
 
     @Modifying
-    @Query("UPDATE User u SET u.failedLoginAttempts = 0, u.accountLocked = false WHERE u.username = :username")
+    @Query("UPDATE User u SET u.failedLoginAttempts = 0, u.accountLocked = false, u.lockTime = null WHERE u.username = :username")
     void resetFailedAttempts(@Param("username") String username);
 
     @Modifying
-    @Query("UPDATE User u SET u.accountLocked = true WHERE u.username = :username")
-    void lockAccount(@Param("username") String username);
+    @Query("UPDATE User u SET u.accountLocked = true, u.lockTime = :lockTime WHERE u.username = :username")
+    void lockAccount(@Param("username") String username, @Param("lockTime") LocalDateTime lockTime);
+
+    @Modifying
+    @Query("UPDATE User u SET u.accountLocked = false, u.lockTime = null, u.failedLoginAttempts = 0 WHERE u.username = :username")
+    void unlockAccount(@Param("username") String username);
 }

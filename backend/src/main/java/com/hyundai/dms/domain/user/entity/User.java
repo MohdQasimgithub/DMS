@@ -53,6 +53,9 @@ public class User extends BaseEntity {
     @Builder.Default
     private int failedLoginAttempts = 0;
 
+    @Column(name = "lock_time")
+    private LocalDateTime lockTime;
+
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 

@@ -1,5 +1,6 @@
 package com.hyundai.dms.domain.role.service;
 
+import com.hyundai.dms.common.exception.BusinessException;
 import com.hyundai.dms.common.exception.DuplicateResourceException;
 import com.hyundai.dms.common.exception.ResourceNotFoundException;
 import com.hyundai.dms.common.response.PageResponse;
@@ -78,6 +79,10 @@ public class RoleService {
     @Transactional
     public void delete(Long id) {
         Role role = findById(id);
+        // Prevent deactivation of ADMIN role
+        if ("ADMIN".equals(role.getRoleName())) {
+            throw new BusinessException("ADMIN role cannot be deactivated");
+        }
         role.setActive(false);
         roleRepository.save(role);
     }

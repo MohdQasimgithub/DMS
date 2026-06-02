@@ -70,8 +70,10 @@ export default function SearchBar({ placeholder = 'Search...', onSearch, debounc
       value={value}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
+      fullWidth
       sx={{
-        minWidth: 280,
+        minWidth: { xs: 'auto', sm: 280 },
+        maxWidth: { xs: '100%', sm: 400 },
         '& .MuiOutlinedInput-root': {
           bgcolor: '#fff',
           borderRadius: 2,

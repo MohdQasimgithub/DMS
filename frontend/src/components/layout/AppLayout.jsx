@@ -131,6 +131,7 @@ export default function AppLayout() {
                               e.stopPropagation();
                               console.log('Navigating to:', child.path);
                               navigate(child.path);
+                              setMobileOpen(false); // Close drawer on mobile after navigation
                             }}
                             sx={{
                               mx: 1, pl: 3, borderRadius: 2, py: 0.8,
@@ -158,6 +159,7 @@ export default function AppLayout() {
                     e.stopPropagation();
                     console.log('Navigating to:', item.path);
                     navigate(item.path);
+                    setMobileOpen(false); // Close drawer on mobile after navigation
                   }}
                   sx={{
                     mx: 1, borderRadius: 2, py: 1,
@@ -212,7 +214,7 @@ export default function AppLayout() {
       }}>
         <Toolbar sx={{ minHeight: '60px !important', px: { xs: 2, sm: 3 } }}>
           <IconButton edge="start" onClick={() => setMobileOpen(!mobileOpen)}
-            sx={{ mr: 2, display: { sm: 'none' }, color: '#64748b' }}>
+            sx={{ mr: 2, display: { sm: 'none' }, color: '#64748b', zIndex: (t) => t.zIndex.drawer - 1 }}>
             <MenuIcon />
           </IconButton>
 
@@ -256,9 +258,22 @@ export default function AppLayout() {
 
       {/* Sidebar */}
       <Box component="nav" sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}>
-        <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, border: 'none' } }}>
+        <Drawer 
+          variant="temporary" 
+          open={mobileOpen} 
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ 
+            keepMounted: true,
+            sx: { zIndex: (theme) => theme.zIndex.drawer + 2 }
+          }}
+          sx={{ 
+            display: { xs: 'block', sm: 'none' }, 
+            '& .MuiDrawer-paper': { 
+              width: DRAWER_WIDTH, 
+              border: 'none',
+              zIndex: (theme) => theme.zIndex.drawer + 2
+            },
+          }}>
           {drawer}
         </Drawer>
         <Drawer variant="permanent"

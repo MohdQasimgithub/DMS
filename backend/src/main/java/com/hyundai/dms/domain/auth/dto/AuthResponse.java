@@ -14,4 +14,6 @@ public class AuthResponse {
     private String username;
     private String fullName;
     private Set<String> roles;
+    private Long dealerId; // Dealer ID for dealer/employee users
+    private String dealerName; // Dealer name for display
 }
